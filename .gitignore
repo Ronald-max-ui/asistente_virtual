@@ -1,0 +1,24 @@
+# Secretos y variables de entorno
+.env
+*.env
+backend/.env
+
+# Python y Backend
+backend/venv/
+venv/
+backend/__pycache__/
+__pycache__/
+*.pyc
+backend/chroma_db/
+backend/storage/
+
+# Node y Frontend
+avatar-kiosk/node_modules/
+node_modules/
+avatar-kiosk/dist/
+dist/
+
+# Archivos del sistema
+*.log
+.DS_Store
+Thumbs.db

@@ -1,0 +1,34 @@
+# Asistente Virtual IA — Dependencias del Backend
+# Generado: 2026-10-01 | Python 3.x | Entorno: venv/
+#
+# Para instalar: pip install -r requirements.txt
+
+# ── API Web ───────────────────────────────────────────────────────────────────
+fastapi==0.142.2
+uvicorn==0.54.0
+starlette==1.7.0
+python-multipart>=0.0.12   # Requerido por FastAPI para Form y File uploads
+
+# ── LLM (Groq) ────────────────────────────────────────────────────────────────
+groq==1.7.0
+
+# ── Text-to-Speech ────────────────────────────────────────────────────────────
+edge-tts==7.2.8
+
+# ── RAG: Embeddings + Vector Store ───────────────────────────────────────────
+fastembed==0.8.1
+chromadb==1.5.9
+langchain==1.4.3
+langchain-community==0.4.2
+langchain-core==1.6.6
+langchain-text-splitters==1.1.2
+
+# ── Cargadores de documentos (ingest.py) ─────────────────────────────────────
+pypdf==6.19.0
+docx2txt==0.9
+
+# ── Utilidades ────────────────────────────────────────────────────────────────
+python-dotenv==1.2.3
+pydantic==2.13.5
+pydantic-settings==2.15.0
+httpx==0.28.1
