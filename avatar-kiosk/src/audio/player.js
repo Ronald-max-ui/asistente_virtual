@@ -28,17 +28,49 @@ let audioQueue     = [];
 let isPlayingQueue = false;
 let _onQueueEmptyCallback = null;
 
+let globalAudioPlayer = null;
+
+function _getOrCreateGlobalAudioPlayer() {
+  if (globalAudioPlayer && document.body.contains(globalAudioPlayer)) {
+    return globalAudioPlayer;
+  }
+  let existing = document.getElementById('lia-audio-player');
+  if (!existing) {
+    existing = new Audio();
+    existing.id = 'lia-audio-player';
+    existing.crossOrigin = 'anonymous';
+    existing.playsInline = true;
+    existing.setAttribute('playsinline', 'true');
+    existing.setAttribute('webkit-playsinline', 'true');
+    existing.style.display = 'none';
+    document.body.appendChild(existing);
+  }
+  globalAudioPlayer = existing;
+  return globalAudioPlayer;
+}
+
 function _initAudioContext() {
-  if (audioContext) return;
-  audioContext = new (window.AudioContext || window.webkitAudioContext)();
-  analyser = audioContext.createAnalyser();
-  analyser.fftSize = 256;
-  dataArray = new Uint8Array(analyser.frequencyBinCount);
-  analyser.connect(audioContext.destination);
+  if (!audioContext) {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    analyser = audioContext.createAnalyser();
+    analyser.fftSize = 256;
+    dataArray = new Uint8Array(analyser.frequencyBinCount);
+    analyser.connect(audioContext.destination);
+  }
+
+  const player = _getOrCreateGlobalAudioPlayer();
+  if (!currentAudioSource && audioContext && player) {
+    try {
+      currentAudioSource = audioContext.createMediaElementSource(player);
+      currentAudioSource.connect(analyser);
+    } catch (e) {
+      console.warn('[audio/player] MediaElementSource ya conectado o error:', e);
+    }
+  }
 }
 
 /**
- * Desbloquea silenciosamente la Web Audio API y el elemento HTML5 Audio
+ * Desbloquea silenciosamente la Web Audio API y el elemento HTML5 Audio único
  * dentro del gesto táctil inicial del usuario (click / touchstart).
  * Crucial para iOS Safari y Chrome en iOS que imponen políticas estrictas de Autoplay.
  */
@@ -58,73 +90,57 @@ export function unlockAudio() {
       source.start(0);
     }
 
-    // "Prime" de elemento HTML5 Audio con audio mudo para habilitar reproducción asíncrona de streaming
-    const silentAudio = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA");
-    silentAudio.volume = 0.01;
-    const p = silentAudio.play();
+    // "Prime" del singleton HTML5 Audio reutilizable en el DOM
+    const player = _getOrCreateGlobalAudioPlayer();
+    player.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
+    const p = player.play();
     if (p !== undefined) {
       p.then(() => {
-        silentAudio.pause();
-      }).catch(() => {});
+        // Pausar y dejar preparado para chunks posteriores
+        player.pause();
+      }).catch((e) => {
+        console.warn('[audio/player] Aviso al desbloquear singleton en gesto:', e);
+      });
     }
-    console.log('[audio/player] Audio desbloqueado exitosamente para iOS/Safari');
+    console.log('[audio/player] Audio singleton desbloqueado exitosamente para iOS/Safari');
   } catch (err) {
     console.warn('[audio/player] Error intentando desbloquear audio en móvil:', err);
   }
 }
 
 /**
- * Núcleo interno: reproduce un audio inmediatamente.
+ * Núcleo interno: reproduce un audio secuencialmente reutilizando el MISMO elemento singleton.
  *
- * @param {string}        url            - Blob URL o ruta estática del audio.
+ * @param {string}        url            - Blob URL, Data URL o ruta estática del audio.
  * @param {Function|null} onEndCallback  - Se llama cuando el audio termina.
  * @param {Function|null} onPlayCallback - Se llama en el momento exacto en que el audio EMPIEZA.
- *                                         Usar para sincronizar subtítulos con el audio.
  */
 function _playImmediate(url, onEndCallback = null, onPlayCallback = null) {
   _initAudioContext();
-  if (audioContext.state === 'suspended') audioContext.resume();
-
-  // Limpiar audio anterior: anular callbacks primero para evitar efectos secundarios
-  if (currentAudioElement) {
-    currentAudioElement.onplay  = null;
-    currentAudioElement.onended = null;
-    currentAudioElement.pause();
-    currentAudioElement.src = '';
-  }
-  if (currentAudioSource) {
-    try { currentAudioSource.disconnect(); } catch (_) {}
-    currentAudioSource = null;
+  if (audioContext && audioContext.state === 'suspended') {
+    audioContext.resume().catch(() => {});
   }
 
-  const audio = new Audio(url);
-  audio.crossOrigin = 'anonymous';
+  const audio = _getOrCreateGlobalAudioPlayer();
 
-  currentAudioSource = audioContext.createMediaElementSource(audio);
-  currentAudioSource.connect(analyser);
-  currentAudioElement = audio;
+  // Limpiar listeners y estado anterior del reproductor singleton
+  audio.onplay  = null;
+  audio.onended = null;
+  audio.onerror = null;
 
   let cleanedUp = false;
   const cleanupAudio = () => {
     if (cleanedUp) return;
     cleanedUp = true;
     _isSpeaking = false;
-    if (currentAudioElement === audio) {
-      currentAudioElement.onplay  = null;
-      currentAudioElement.onended = null;
-      currentAudioElement.onerror = null;
-      currentAudioElement = null;
-    }
-    if (currentAudioSource) {
-      try { currentAudioSource.disconnect(); } catch (_) {}
-      currentAudioSource = null;
-    }
+    audio.onplay  = null;
+    audio.onended = null;
+    audio.onerror = null;
     if (url.startsWith('blob:')) URL.revokeObjectURL(url);
   };
 
   audio.onplay = () => {
     _isSpeaking = true;
-    // ── Punto de sincronización: el subtítulo se muestra AQUÍ, no antes ──────
     if (onPlayCallback) onPlayCallback();
   };
 
@@ -134,18 +150,20 @@ function _playImmediate(url, onEndCallback = null, onPlayCallback = null) {
   };
 
   audio.onerror = (e) => {
-    console.warn('[audio/player] Error en elemento de audio:', e);
-    // Si falla el chunk, forzar avance para no congelar la cola ni los subtítulos
+    console.warn('[audio/player] Error en elemento de audio singleton:', e);
     if (onPlayCallback) onPlayCallback();
     cleanupAudio();
     if (onEndCallback) onEndCallback();
   };
 
+  // Reutilizar la MISMA instancia asignando el nuevo source
+  audio.src = url;
+  audio.currentTime = 0;
+
   const playPromise = audio.play();
   if (playPromise !== undefined) {
     playPromise.catch((err) => {
-      console.warn('[audio/player] Autoplay bloqueado o rechazado en móvil (iOS Safari):', err);
-      // Resiliencia móvil: asegurar que el texto se muestre y la cola continúe
+      console.warn('[audio/player] Play rechazado en móvil (iOS Safari):', err);
       if (onPlayCallback) onPlayCallback();
       cleanupAudio();
       if (onEndCallback) onEndCallback();
@@ -260,16 +278,12 @@ export function clearAudioQueue() {
 export function stopCurrentAudio() {
   audioQueue = [];
   isPlayingQueue = false;
-  if (currentAudioElement) {
-    currentAudioElement.onplay = null;
-    currentAudioElement.onended = null;
-    currentAudioElement.pause();
-    currentAudioElement.src = '';
-    currentAudioElement = null;
-  }
-  if (currentAudioSource) {
-    try { currentAudioSource.disconnect(); } catch (_) {}
-    currentAudioSource = null;
+  if (globalAudioPlayer) {
+    globalAudioPlayer.onplay = null;
+    globalAudioPlayer.onended = null;
+    globalAudioPlayer.onerror = null;
+    globalAudioPlayer.pause();
+    globalAudioPlayer.currentTime = 0;
   }
   _isSpeaking = false;
 }
