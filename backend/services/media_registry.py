@@ -44,6 +44,9 @@ _CATALOGO_BASE: dict[str, dict] = {
     },
 }
 
+# Alias público para consumo en prompts y servicios
+MEDIA_REGISTRY = _CATALOGO_BASE
+
 
 def resolver_url_recurso(recurso_id: str) -> str:
     """

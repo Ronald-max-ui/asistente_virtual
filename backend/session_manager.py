@@ -27,14 +27,80 @@ class SessionManager:
             ahora = time.time()
             if session_id in self._sessions:
                 sesion = self._sessions[session_id]
-                # Sesión expirada: reiniciar historial
+                # Sesión expirada: reiniciar sesión completa
                 if ahora - sesion["last_active"] > self._ttl:
-                    self._sessions[session_id] = {"history": [], "last_active": ahora}
+                    self._sessions[session_id] = {
+                        "history": [],
+                        "shown_media": [],
+                        "funnel_stage": "discovery",
+                        "lead_submitted": False,
+                        "last_active": ahora,
+                    }
+                else:
+                    sesion.setdefault("shown_media", [])
+                    sesion.setdefault("funnel_stage", "discovery")
+                    sesion.setdefault("lead_submitted", False)
             else:
-                self._sessions[session_id] = {"history": [], "last_active": ahora}
+                self._sessions[session_id] = {
+                    "history": [],
+                    "shown_media": [],
+                    "funnel_stage": "discovery",
+                    "lead_submitted": False,
+                    "last_active": ahora,
+                }
 
             self._sessions[session_id]["last_active"] = ahora
             return self._sessions[session_id]["history"]
+
+    async def obtener_sesion(self, session_id: str) -> dict:
+        """Retorna el diccionario completo de la sesión ({history, shown_media, funnel_stage, lead_submitted, last_active})."""
+        async with self._lock:
+            ahora = time.time()
+            if session_id in self._sessions:
+                sesion = self._sessions[session_id]
+                if ahora - sesion["last_active"] > self._ttl:
+                    self._sessions[session_id] = {
+                        "history": [],
+                        "shown_media": [],
+                        "funnel_stage": "discovery",
+                        "lead_submitted": False,
+                        "last_active": ahora,
+                    }
+                else:
+                    sesion.setdefault("shown_media", [])
+                    sesion.setdefault("funnel_stage", "discovery")
+                    sesion.setdefault("lead_submitted", False)
+            else:
+                self._sessions[session_id] = {
+                    "history": [],
+                    "shown_media": [],
+                    "funnel_stage": "discovery",
+                    "lead_submitted": False,
+                    "last_active": ahora,
+                }
+            self._sessions[session_id]["last_active"] = ahora
+            return self._sessions[session_id]
+
+    async def actualizar_etapa_embudo(self, session_id: str, stage: str) -> None:
+        """Actualiza la etapa del embudo ('discovery', 'value', 'lead_captured', 'closing')."""
+        async with self._lock:
+            if session_id in self._sessions:
+                self._sessions[session_id]["funnel_stage"] = stage
+
+    async def registrar_lead_completado(self, session_id: str) -> None:
+        """Marca lead_submitted=True y funnel_stage='closing' tras registrar formulario."""
+        async with self._lock:
+            if session_id in self._sessions:
+                self._sessions[session_id]["lead_submitted"] = True
+                self._sessions[session_id]["funnel_stage"] = "closing"
+
+    async def registrar_medio_mostrado(self, session_id: str, resource_id: str) -> None:
+        """Registra un recurso visual mostrado en la sesión para evitar repeticiones."""
+        async with self._lock:
+            if session_id in self._sessions:
+                shown = self._sessions[session_id].setdefault("shown_media", [])
+                if resource_id not in shown:
+                    shown.append(resource_id)
 
     async def resetear(self, session_id: str) -> None:
         """Elimina explícitamente una sesión (ej. tras reset manual del kiosco)."""

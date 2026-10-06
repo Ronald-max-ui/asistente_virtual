@@ -129,6 +129,23 @@ def detectar_entidad(query: str, historial: list | None = None) -> str | None:
     return None
 
 
+# ── Asociación de Entidades a Recursos Visuales del Catálogo ─────────────────
+# Permite asociar la carrera o curso activo con los recursos multimedia del catálogo
+RECURSOS_POR_ENTIDAD: dict[str, list[str]] = {
+    "gastronomia": ["gastronomia_talleres", "gastronomia_uniforme"],
+    "turismo": ["turismo_salidas"],
+    "bartender": ["bartender_barra"],
+    "panaderia_pasteleria": ["pasteleria_horno"],
+}
+
+
+def obtener_recursos_entidad(entidad: str | None) -> list[str]:
+    """Retorna los IDs de recursos visuales asociados a una entidad si existen."""
+    if not entidad:
+        return []
+    return RECURSOS_POR_ENTIDAD.get(entidad, [])
+
+
 # ── Formateo de contexto con metadatos jerárquicos ────────────────────────────
 
 def _formatear_chunk(doc) -> str:
