@@ -16,10 +16,11 @@
  *   data: { type: "error", message: "..." }
  */
 
-import { enqueueAudio, clearAudioQueue, isAudioBusy, onAudioQueueFinished } from '../audio/player.js';
+import { enqueueBase64Audio, enqueueAudio, clearAudioQueue, isAudioBusy, onAudioQueueFinished } from '../audio/player.js';
 import { setIsProcessingResponse, registrarActividad } from '../avatar/animator.js';
 import { openGallery, openLeadForm, openPayment } from '../ui/overlays.js';
 import { getPersona, setPersona } from '../ui/persona.js';
+import { detenerReconocimiento } from '../ui/controls.js';
 
 // ── Configuración ─────────────────────────────────────────────────────────────
 //const BACKEND_URL        = 'http://127.0.0.1:8000';
@@ -203,8 +204,15 @@ export async function consultarAsistente(pregunta, intentos = 0) {
     // Texto pendiente: llega del SSE antes del audio, se muestra al iniciar el audio
     let pendingText  = '';
     let subtitleText = '';
+    let micDetenido  = false;
 
     await _parseSseStream(res.body, (event) => {
+      // Liberar el micrófono de inmediato en el primer token/evento para que iOS WebKit habilite los altavoces
+      if (!micDetenido) {
+        detenerReconocimiento();
+        micDetenido = true;
+      }
+
       switch (event.type) {
 
         case 'text':
@@ -218,8 +226,8 @@ export async function consultarAsistente(pregunta, intentos = 0) {
 
           if (!event.audio_b64) break;
 
-          enqueueAudio(
-            b64ToBlobUrl(event.audio_b64),
+          enqueueBase64Audio(
+            event.audio_b64,
             null,
             () => {
               if (textoDeEsteChunk) {

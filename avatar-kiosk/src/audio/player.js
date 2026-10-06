@@ -1,222 +1,241 @@
 /**
- * audio/player.js — Singleton de AudioContext con cola de reproducción sincronizada con subtítulos.
+ * audio/player.js — Reproductor de Audio nativo Web Audio API (AudioContext)
+ * con decodificación de PCM / MP3 in-memory y cola encadenada de AudioBufferSourceNode.
  *
- * MEJORA (fix desincronización de subtítulos):
- *   enqueueAudio() ahora acepta un `onPlayCallback` que se dispara en el momento
- *   exacto en que AudioContext llama a source.start() / audio.onplay. El cliente
- *   (api/client.js) pasa el texto como closure del onPlayCallback, de modo que el
- *   subtítulo solo se muestra cuando el audio físicamente empieza a sonar.
- *
- * API pública:
- *   playAudio(url, onEnd)           → Reproduce inmediatamente (prioridad atracción).
- *   enqueueAudio(url, onEnd, onPlay)→ Añade a la cola. onPlay se llama al iniciar reproducción.
- *   clearAudioQueue()               → Vacía la cola (al inicio de nueva pregunta).
- *   isCurrentlySpeaking()           → true si hay audio reproduciéndose.
- *   getAnalyser()                   → { analyser, dataArray } para lipsync.
+ * Máxima compatibilidad con iOS Safari / WebKit:
+ *  - Sin instanciar elementos HTML5 <audio> ni blobs asíncronos que Safari bloquea.
+ *  - Decodificación directa mediante audioContext.decodeAudioData().
+ *  - Lipsync garantizado conectando cada AudioBufferSourceNode a analyser -> destination.
+ *  - Desbloqueo garantizado en el gesto táctil inicial del usuario.
  */
 
-let audioContext        = null;
-let analyser            = null;
-let dataArray           = null;
-let _isSpeaking         = false;
-let currentAudioSource  = null;
-let currentAudioElement = null;
+let audioContext = null;
+let analyser     = null;
+let dataArray    = null;
+let _isSpeaking  = false;
 
-// ── Cola de reproducción ──────────────────────────────────────────────────────
-// Cada ítem: { url: string, onEndCallback: Function|null, onPlayCallback: Function|null }
-let audioQueue     = [];
-let isPlayingQueue = false;
+// ── Cola de reproducción de buffers ───────────────────────────────────────────
+// Cada ítem: { buffer: AudioBuffer, onEndCallback: Function|null, onPlayCallback: Function|null }
+let bufferQueue        = [];
+let isPlayingQueue     = false;
+let currentSourceNode  = null;
 let _onQueueEmptyCallback = null;
 
-let globalAudioPlayer = null;
-
-function _getOrCreateGlobalAudioPlayer() {
-  if (globalAudioPlayer && document.body.contains(globalAudioPlayer)) {
-    return globalAudioPlayer;
+// Helper: Convierte string base64 a ArrayBuffer estándar
+export function base64ToArrayBuffer(base64) {
+  const binaryString = window.atob(base64);
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
   }
-  let existing = document.getElementById('lia-audio-player');
-  if (!existing) {
-    existing = new Audio();
-    existing.id = 'lia-audio-player';
-    existing.crossOrigin = 'anonymous';
-    existing.playsInline = true;
-    existing.setAttribute('playsinline', 'true');
-    existing.setAttribute('webkit-playsinline', 'true');
-    existing.style.display = 'none';
-    document.body.appendChild(existing);
-  }
-  globalAudioPlayer = existing;
-  return globalAudioPlayer;
+  return bytes.buffer;
 }
 
+/**
+ * Inicializa el AudioContext global y el nodo Analyser para lipsync.
+ */
 function _initAudioContext() {
   if (!audioContext) {
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    audioContext = new AudioContextClass();
+    window.audioCtx = audioContext; // Exponer para depuración e interoperabilidad
+
     analyser = audioContext.createAnalyser();
     analyser.fftSize = 256;
     dataArray = new Uint8Array(analyser.frequencyBinCount);
     analyser.connect(audioContext.destination);
   }
-
-  const player = _getOrCreateGlobalAudioPlayer();
-  if (!currentAudioSource && audioContext && player) {
-    try {
-      currentAudioSource = audioContext.createMediaElementSource(player);
-      currentAudioSource.connect(analyser);
-    } catch (e) {
-      console.warn('[audio/player] MediaElementSource ya conectado o error:', e);
-    }
-  }
+  return audioContext;
 }
 
 /**
- * Desbloquea silenciosamente la Web Audio API y el elemento HTML5 Audio único
- * dentro del gesto táctil inicial del usuario (click / touchstart).
- * Crucial para iOS Safari y Chrome en iOS que imponen políticas estrictas de Autoplay.
+ * Desbloquea el AudioContext dentro del evento táctil / click del usuario.
  */
 export function unlockAudio() {
   try {
-    _initAudioContext();
-    if (audioContext && audioContext.state === 'suspended') {
-      audioContext.resume().catch(() => {});
+    const ctx = _initAudioContext();
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch((err) => console.warn('[audio/player] Error resumiendo AudioContext:', err));
     }
 
-    // "Prime" con 1 milisegundo de buffer de silencio en AudioContext
-    if (audioContext && audioContext.createBuffer) {
-      const buffer = audioContext.createBuffer(1, 1, 22050);
-      const source = audioContext.createBufferSource();
+    // Inyectar un micro-buffer de silencio (1 muestra a 22050Hz) para autorizar el contexto en iOS
+    if (ctx.createBuffer) {
+      const buffer = ctx.createBuffer(1, 1, 22050);
+      const source = ctx.createBufferSource();
       source.buffer = buffer;
-      source.connect(audioContext.destination);
+      source.connect(ctx.destination);
       source.start(0);
     }
-
-    // "Prime" del singleton HTML5 Audio reutilizable en el DOM
-    const player = _getOrCreateGlobalAudioPlayer();
-    player.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
-    const p = player.play();
-    if (p !== undefined) {
-      p.then(() => {
-        // Pausar y dejar preparado para chunks posteriores
-        player.pause();
-      }).catch((e) => {
-        console.warn('[audio/player] Aviso al desbloquear singleton en gesto:', e);
-      });
-    }
-    console.log('[audio/player] Audio singleton desbloqueado exitosamente para iOS/Safari');
+    console.log('[audio/player] AudioContext desbloqueado exitosamente para iOS/Safari');
   } catch (err) {
-    console.warn('[audio/player] Error intentando desbloquear audio en móvil:', err);
+    console.warn('[audio/player] Error en unlockAudio:', err);
   }
 }
 
 /**
- * Núcleo interno: reproduce un audio secuencialmente reutilizando el MISMO elemento singleton.
- *
- * @param {string}        url            - Blob URL, Data URL o ruta estática del audio.
- * @param {Function|null} onEndCallback  - Se llama cuando el audio termina.
- * @param {Function|null} onPlayCallback - Se llama en el momento exacto en que el audio EMPIEZA.
+ * Procesa secuencialmente los buffers encolados usando AudioBufferSourceNode.
  */
-function _playImmediate(url, onEndCallback = null, onPlayCallback = null) {
-  _initAudioContext();
-  if (audioContext && audioContext.state === 'suspended') {
-    audioContext.resume().catch(() => {});
-  }
-
-  const audio = _getOrCreateGlobalAudioPlayer();
-
-  // Limpiar listeners y estado anterior del reproductor singleton
-  audio.onplay  = null;
-  audio.onended = null;
-  audio.onerror = null;
-
-  let cleanedUp = false;
-  const cleanupAudio = () => {
-    if (cleanedUp) return;
-    cleanedUp = true;
-    _isSpeaking = false;
-    audio.onplay  = null;
-    audio.onended = null;
-    audio.onerror = null;
-    if (url.startsWith('blob:')) URL.revokeObjectURL(url);
-  };
-
-  audio.onplay = () => {
-    _isSpeaking = true;
-    if (onPlayCallback) onPlayCallback();
-  };
-
-  audio.onended = () => {
-    cleanupAudio();
-    if (onEndCallback) onEndCallback();
-  };
-
-  audio.onerror = (e) => {
-    console.warn('[audio/player] Error en elemento de audio singleton:', e);
-    if (onPlayCallback) onPlayCallback();
-    cleanupAudio();
-    if (onEndCallback) onEndCallback();
-  };
-
-  // Reutilizar la MISMA instancia asignando el nuevo source
-  audio.src = url;
-  audio.currentTime = 0;
-
-  const playPromise = audio.play();
-  if (playPromise !== undefined) {
-    playPromise.catch((err) => {
-      console.warn('[audio/player] Play rechazado en móvil (iOS Safari):', err);
-      if (onPlayCallback) onPlayCallback();
-      cleanupAudio();
-      if (onEndCallback) onEndCallback();
-    });
-  }
-}
-
-/** Procesa el siguiente elemento de la cola si hay uno pendiente y no estamos reproduciendo. */
-function _processQueue() {
+function _processBufferQueue() {
   if (isPlayingQueue) return;
-  if (audioQueue.length === 0) {
-    if (!_isSpeaking && _onQueueEmptyCallback) {
+
+  if (bufferQueue.length === 0) {
+    isPlayingQueue = false;
+    _isSpeaking = false;
+    if (_onQueueEmptyCallback) {
       const cb = _onQueueEmptyCallback;
       _onQueueEmptyCallback = null;
       cb();
     }
     return;
   }
+
   isPlayingQueue = true;
-  const item = audioQueue.shift();
-  _playImmediate(
-    item.url,
-    () => {
-      isPlayingQueue = false;
-      if (item.onEndCallback) item.onEndCallback();
-      if (audioQueue.length === 0 && _onQueueEmptyCallback) {
-        const cb = _onQueueEmptyCallback;
-        _onQueueEmptyCallback = null;
-        cb();
-      } else {
-        _processQueue(); // Encadenar el siguiente chunk
+  _isSpeaking = true;
+  const item = bufferQueue.shift();
+
+  try {
+    const ctx = _initAudioContext();
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
+
+    const source = ctx.createBufferSource();
+    source.buffer = item.buffer;
+    currentSourceNode = source;
+
+    // Conectar a analyser (para lipsync de Lía) y de ahí a destination (parlantes)
+    source.connect(analyser);
+
+    // Disparar sincronización de subtítulos al comenzar la reproducción
+    if (item.onPlayCallback) {
+      item.onPlayCallback();
+    }
+
+    source.onended = () => {
+      currentSourceNode = null;
+      if (item.onEndCallback) {
+        item.onEndCallback();
       }
-    },
-    item.onPlayCallback, // Propaga el callback de inicio al núcleo
-  );
+      isPlayingQueue = false;
+      _processBufferQueue(); // Encadenar el siguiente fragmento
+    };
+
+    source.start(0);
+  } catch (err) {
+    console.error('[audio/player] Error reproduciendo buffer en AudioBufferSourceNode:', err);
+    if (item.onPlayCallback) item.onPlayCallback();
+    if (item.onEndCallback) item.onEndCallback();
+    isPlayingQueue = false;
+    _processBufferQueue();
+  }
 }
 
-// ── API pública ───────────────────────────────────────────────────────────────
+/**
+ * Encola un fragmento de audio en Base64 recibido por SSE.
+ * Decodifica asíncronamente con decodeAudioData y lo encadena a la cola de reproducción.
+ *
+ * @param {string} b64Data - String en formato base64 con audio MP3 o WAV
+ * @param {Function|null} onEndCallback - Callback al finalizar este chunk
+ * @param {Function|null} onPlayCallback - Callback al iniciar este chunk (para subtítulos sincronizados)
+ */
+export async function enqueueBase64Audio(b64Data, onEndCallback = null, onPlayCallback = null) {
+  if (!b64Data) return;
+  try {
+    const ctx = _initAudioContext();
+    if (ctx.state === 'suspended') {
+      await ctx.resume().catch(() => {});
+    }
 
-/** Devuelve true si hay audio reproduciéndose actualmente. */
+    const arrayBuffer = base64ToArrayBuffer(b64Data);
+
+    // decodeAudioData con soporte dual para callbacks de Safari legado y Promesas
+    ctx.decodeAudioData(
+      arrayBuffer,
+      (audioBuffer) => {
+        bufferQueue.push({
+          buffer: audioBuffer,
+          onEndCallback,
+          onPlayCallback,
+        });
+        _processBufferQueue();
+      },
+      (decodeErr) => {
+        console.warn('[audio/player] Error decodificando audio chunk:', decodeErr);
+        if (onPlayCallback) onPlayCallback();
+        if (onEndCallback) onEndCallback();
+      }
+    );
+  } catch (err) {
+    console.error('[audio/player] Error procesando base64 audio:', err);
+    if (onPlayCallback) onPlayCallback();
+    if (onEndCallback) onEndCallback();
+  }
+}
+
+/**
+ * Compatibilidad con la firma anterior enqueueAudio(url, ...).
+ * Si la url es data: o blob: o base64, la delega a decodificación.
+ */
+export async function enqueueAudio(urlOrB64, onEndCallback = null, onPlayCallback = null) {
+  if (!urlOrB64) return;
+  if (urlOrB64.startsWith('data:audio/')) {
+    const b64 = urlOrB64.split(',')[1];
+    return enqueueBase64Audio(b64, onEndCallback, onPlayCallback);
+  }
+  try {
+    // Si es una URL o Blob URL, descargamos el ArrayBuffer para decodificarlo nativamente con Web Audio
+    const res = await fetch(urlOrB64);
+    const arrayBuffer = await res.arrayBuffer();
+    const ctx = _initAudioContext();
+    ctx.decodeAudioData(
+      arrayBuffer,
+      (audioBuffer) => {
+        bufferQueue.push({
+          buffer: audioBuffer,
+          onEndCallback,
+          onPlayCallback,
+        });
+        _processBufferQueue();
+      },
+      (err) => {
+        console.warn('[audio/player] Error decodificando URL audio:', err);
+        if (onPlayCallback) onPlayCallback();
+        if (onEndCallback) onEndCallback();
+      }
+    );
+  } catch (e) {
+    console.warn('[audio/player] Fallo al cargar audio desde URL:', e);
+    if (onPlayCallback) onPlayCallback();
+    if (onEndCallback) onEndCallback();
+  }
+}
+
+/**
+ * Reproduce un audio inmediatamente desde URL (ej. atracciones), cancelando colas previas.
+ */
+export async function playAudio(url, onEndCallback = null) {
+  clearAudioQueue();
+  stopCurrentAudio();
+  enqueueAudio(url, onEndCallback, null);
+}
+
+/**
+ * Devuelve true si hay audio reproduciéndose activamente.
+ */
 export function isCurrentlySpeaking() {
   return _isSpeaking;
 }
 
-/** Devuelve true si hay audio reproduciéndose o elementos esperando en la cola. */
+/**
+ * Devuelve true si hay audio reproduciéndose o elementos encolados pendientes.
+ */
 export function isAudioBusy() {
-  return _isSpeaking || isPlayingQueue || audioQueue.length > 0;
+  return _isSpeaking || isPlayingQueue || bufferQueue.length > 0;
 }
 
 /**
- * Registra un callback que se llamará cuando la cola actual de audio termine
- * completamente de sonar y no queden chunks pendientes.
- * Si ya no hay audio ocupado, ejecuta el callback inmediatamente.
+ * Registra un callback para cuando la cola actual termine completamente.
  */
 export function onAudioQueueFinished(callback) {
   if (!isAudioBusy()) {
@@ -226,65 +245,34 @@ export function onAudioQueueFinished(callback) {
   _onQueueEmptyCallback = callback;
 }
 
-/** Devuelve el analyser y dataArray para el lipsync del animator. */
+/**
+ * Devuelve el analyser y dataArray para el lipsync de Lía en animator.js.
+ */
 export function getAnalyser() {
+  _initAudioContext();
   return { analyser, dataArray };
 }
 
 /**
- * Reproduce un audio inmediatamente, cancelando cualquier cola activa.
- * Usar para: audios de atracción (/atraccion_1.mp3, etc.).
- *
- * @param {string}        url            - URL del audio.
- * @param {Function|null} onEndCallback  - Callback al terminar.
- */
-export function playAudio(url, onEndCallback = null) {
-  audioQueue     = [];
-  isPlayingQueue = false;
-  _playImmediate(url, onEndCallback, null);
-}
-
-/**
- * Añade un audio a la cola y la procesa si no hay nada reproduciéndose.
- * Usar para: chunks del pipeline streaming /chat/stream.
- *
- * La sincronización de subtítulos funciona así:
- *   1. El texto llega del SSE → NO se muestra aún.
- *   2. Se llama enqueueAudio(url, null, () => mostrar_texto_en_pantalla).
- *   3. Cuando el AudioContext dispara onplay, se llama onPlayCallback().
- *   4. El subtítulo aparece en pantalla sincronizado con el audio.
- *
- * @param {string}        url             - URL del audio (blob: generada desde base64).
- * @param {Function|null} onEndCallback   - Callback al terminar este chunk.
- * @param {Function|null} onPlayCallback  - Callback al INICIAR este chunk (para subtítulos).
- */
-export function enqueueAudio(url, onEndCallback = null, onPlayCallback = null) {
-  audioQueue.push({ url, onEndCallback, onPlayCallback });
-  _processQueue();
-}
-
-/**
- * Vacía la cola de reproducción sin detener el audio actual.
- * Llamar al inicio de cada nueva consulta.
+ * Vacía la cola de reproducción.
  */
 export function clearAudioQueue() {
-  audioQueue = [];
+  bufferQueue = [];
 }
 
 /**
- * Detiene inmediatamente cualquier audio en reproducción y vacía la cola.
- * Útil para cancelar audios de atracción o respuestas en curso ante interacción del usuario.
+ * Detiene inmediatamente la reproducción actual y vacía la cola.
  */
 export function stopCurrentAudio() {
-  audioQueue = [];
+  bufferQueue = [];
   isPlayingQueue = false;
-  if (globalAudioPlayer) {
-    globalAudioPlayer.onplay = null;
-    globalAudioPlayer.onended = null;
-    globalAudioPlayer.onerror = null;
-    globalAudioPlayer.pause();
-    globalAudioPlayer.currentTime = 0;
-  }
   _isSpeaking = false;
+  if (currentSourceNode) {
+    try {
+      currentSourceNode.stop();
+      currentSourceNode.disconnect();
+    } catch (_) {}
+    currentSourceNode = null;
+  }
 }
 

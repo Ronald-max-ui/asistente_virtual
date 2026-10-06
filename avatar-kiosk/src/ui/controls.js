@@ -104,7 +104,7 @@ export function initControls(mode = 'web') {
       e.preventDefault();
     }
 
-    // 1. Desbloqueo silencioso inmediato del motor de audio (Web Audio API + HTML5 Audio)
+    // 1. Desbloqueo silencioso inmediato del motor de audio (Web Audio API)
     unlockAudio();
 
     // 2. Control de estado del avatar y SpeechRecognition
@@ -125,4 +125,28 @@ export function initControls(mode = 'web') {
   // Escuchar tanto touchstart como click
   micBtn.addEventListener('touchstart', manejarInteraccionMic, { passive: false });
   micBtn.addEventListener('click', manejarInteraccionMic);
+
+  _recognitionInstance = recognition;
+}
+
+let _recognitionInstance = null;
+
+/**
+ * Detiene inmediatamente la sesión de SpeechRecognition.
+ * Crucial para iOS Safari: liberar el micrófono permite al SO conmutar el canal de audio a los altavoces.
+ */
+export function detenerReconocimiento() {
+  if (_recognitionInstance) {
+    try {
+      _recognitionInstance.stop();
+      console.log('[ui/controls] Micrófono / SpeechRecognition liberado para reproducción de audio.');
+    } catch (_) {}
+  }
+}
+
+/**
+ * Reactiva SpeechRecognition si es requerido tras finalizar la locución del avatar.
+ */
+export function reactivarReconocimiento() {
+  // En modo quiosco o si se desea reactivar, se puede invocar de forma controlada
 }
