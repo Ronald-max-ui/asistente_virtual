@@ -60,6 +60,8 @@ body, html {
 
 #mic-btn {
   pointer-events: auto;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   width: 64px;
   height: 64px;
   border-radius: 50%;

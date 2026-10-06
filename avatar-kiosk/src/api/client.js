@@ -254,6 +254,17 @@ export async function consultarAsistente(pregunta, intentos = 0) {
           setIsProcessingResponse(false);
           registrarActividad();
           console.log('[api/client] Stream completo.');
+          // Si el audio ya terminó o no llegó a reproducirse por restricción móvil,
+          // retirar el estado "Consultando..." para no congelar la UI
+          if (!isAudioBusy()) {
+            getStatusBadge().textContent = 'Toca el micrófono para hablar';
+            getStatusBadge().className   = '';
+          } else {
+            onAudioQueueFinished(() => {
+              getStatusBadge().textContent = 'Toca el micrófono para hablar';
+              getStatusBadge().className   = '';
+            });
+          }
           break;
 
         case 'error':

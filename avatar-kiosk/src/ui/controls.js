@@ -11,7 +11,7 @@
 
 import { consultarAsistente } from '../api/client.js';
 import { dispararSaludo, setIsListening, registrarActividad } from '../avatar/animator.js';
-import { isCurrentlySpeaking } from '../audio/player.js';
+import { isCurrentlySpeaking, unlockAudio } from '../audio/player.js';
 
 /**
  * Inicializa todos los controles de UI.
@@ -97,16 +97,32 @@ export function initControls(mode = 'web') {
     }
   };
 
-  // ── Botón de micrófono ─────────────────────────────────────────────────────
-  micBtn.addEventListener('click', () => {
-    // No iniciar escucha si el avatar está hablando
+  // ── Botón de micrófono: Desbloqueo de audio y soporte táctil para iOS ─────
+  const manejarInteraccionMic = (e) => {
+    // Si fue touchstart, prevenimos el click fantasma posterior de 300ms
+    if (e.type === 'touchstart') {
+      e.preventDefault();
+    }
+
+    // 1. Desbloqueo silencioso inmediato del motor de audio (Web Audio API + HTML5 Audio)
+    unlockAudio();
+
+    // 2. Control de estado del avatar y SpeechRecognition
     if (isCurrentlySpeaking()) return;
 
     if (!isListening) {
       dispararSaludo(); // Saludo de bienvenida al tocar el micrófono
-      recognition.start();
+      try {
+        recognition.start();
+      } catch (recErr) {
+        console.warn('[ui/controls] Error al iniciar recognition:', recErr);
+      }
     } else {
       recognition.stop();
     }
-  });
+  };
+
+  // Escuchar tanto touchstart como click
+  micBtn.addEventListener('touchstart', manejarInteraccionMic, { passive: false });
+  micBtn.addEventListener('click', manejarInteraccionMic);
 }

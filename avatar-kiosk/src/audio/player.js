@@ -38,6 +38,42 @@ function _initAudioContext() {
 }
 
 /**
+ * Desbloquea silenciosamente la Web Audio API y el elemento HTML5 Audio
+ * dentro del gesto táctil inicial del usuario (click / touchstart).
+ * Crucial para iOS Safari y Chrome en iOS que imponen políticas estrictas de Autoplay.
+ */
+export function unlockAudio() {
+  try {
+    _initAudioContext();
+    if (audioContext && audioContext.state === 'suspended') {
+      audioContext.resume().catch(() => {});
+    }
+
+    // "Prime" con 1 milisegundo de buffer de silencio en AudioContext
+    if (audioContext && audioContext.createBuffer) {
+      const buffer = audioContext.createBuffer(1, 1, 22050);
+      const source = audioContext.createBufferSource();
+      source.buffer = buffer;
+      source.connect(audioContext.destination);
+      source.start(0);
+    }
+
+    // "Prime" de elemento HTML5 Audio con audio mudo para habilitar reproducción asíncrona de streaming
+    const silentAudio = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA");
+    silentAudio.volume = 0.01;
+    const p = silentAudio.play();
+    if (p !== undefined) {
+      p.then(() => {
+        silentAudio.pause();
+      }).catch(() => {});
+    }
+    console.log('[audio/player] Audio desbloqueado exitosamente para iOS/Safari');
+  } catch (err) {
+    console.warn('[audio/player] Error intentando desbloquear audio en móvil:', err);
+  }
+}
+
+/**
  * Núcleo interno: reproduce un audio inmediatamente.
  *
  * @param {string}        url            - Blob URL o ruta estática del audio.
@@ -68,25 +104,53 @@ function _playImmediate(url, onEndCallback = null, onPlayCallback = null) {
   currentAudioSource.connect(analyser);
   currentAudioElement = audio;
 
+  let cleanedUp = false;
+  const cleanupAudio = () => {
+    if (cleanedUp) return;
+    cleanedUp = true;
+    _isSpeaking = false;
+    if (currentAudioElement === audio) {
+      currentAudioElement.onplay  = null;
+      currentAudioElement.onended = null;
+      currentAudioElement.onerror = null;
+      currentAudioElement = null;
+    }
+    if (currentAudioSource) {
+      try { currentAudioSource.disconnect(); } catch (_) {}
+      currentAudioSource = null;
+    }
+    if (url.startsWith('blob:')) URL.revokeObjectURL(url);
+  };
+
   audio.onplay = () => {
     _isSpeaking = true;
     // ── Punto de sincronización: el subtítulo se muestra AQUÍ, no antes ──────
-    // onPlayCallback se llama en el momento exacto en que el navegador empieza
-    // a reproducir el audio. Cualquier texto asociado a este chunk debe mostrarse
-    // dentro de este callback, no cuando el evento SSE llegó al cliente.
     if (onPlayCallback) onPlayCallback();
   };
 
   audio.onended = () => {
-    _isSpeaking = false;
-    try { currentAudioSource.disconnect(); } catch (_) {}
-    currentAudioSource = null;
-    currentAudioElement = null;
-    if (url.startsWith('blob:')) URL.revokeObjectURL(url);
+    cleanupAudio();
     if (onEndCallback) onEndCallback();
   };
 
-  audio.play().catch(e => console.error('[audio/player] Error al reproducir:', e));
+  audio.onerror = (e) => {
+    console.warn('[audio/player] Error en elemento de audio:', e);
+    // Si falla el chunk, forzar avance para no congelar la cola ni los subtítulos
+    if (onPlayCallback) onPlayCallback();
+    cleanupAudio();
+    if (onEndCallback) onEndCallback();
+  };
+
+  const playPromise = audio.play();
+  if (playPromise !== undefined) {
+    playPromise.catch((err) => {
+      console.warn('[audio/player] Autoplay bloqueado o rechazado en móvil (iOS Safari):', err);
+      // Resiliencia móvil: asegurar que el texto se muestre y la cola continúe
+      if (onPlayCallback) onPlayCallback();
+      cleanupAudio();
+      if (onEndCallback) onEndCallback();
+    });
+  }
 }
 
 /** Procesa el siguiente elemento de la cola si hay uno pendiente y no estamos reproduciendo. */
