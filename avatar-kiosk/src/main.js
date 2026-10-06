@@ -23,11 +23,12 @@ import { loadAvatar } from './avatar/loader.js';
 import { startAnimation } from './avatar/animator.js';
 import { initControls } from './ui/controls.js';
 import { initOverlays } from './ui/overlays.js';
+import { initPersona } from './ui/persona.js';
 import { APP_MODE } from './api/client.js';
 
 // ── 1. Escena ─────────────────────────────────────────────────────────────────
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x000000);
+scene.background = null;  // transparente: deja ver el aura (#lia-aura) detrás del canvas
 
 // ── 2. Cámara ─────────────────────────────────────────────────────────────────
 const camera = new THREE.PerspectiveCamera(
@@ -39,9 +40,11 @@ const camera = new THREE.PerspectiveCamera(
 camera.position.set(0.0, 1.30, 0.95);
 
 // ── 3. Renderer ───────────────────────────────────────────────────────────────
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setClearColor(0x000000, 0);   // fondo transparente → se ve #lia-aura detrás
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.domElement.id = 'canvas3d';
 document.body.appendChild(renderer.domElement);
 
 // ── 4. Iluminación ────────────────────────────────────────────────────────────
@@ -53,6 +56,7 @@ scene.add(new THREE.AmbientLight(0xffffff, 0.7));
 // ── 5. Módulos ────────────────────────────────────────────────────────────────
 console.log(`[main] Iniciando en modo: ${APP_MODE}`);
 
+initPersona(APP_MODE);           // Aura lumínica + switch Consulta/Vendedora
 initOverlays(APP_MODE);          // Monta overlays (no-op en modo kiosk)
 loadAvatar(scene);               // Carga el VRM de forma asíncrona
 initControls(APP_MODE);          // Inicializa micrófono y UI (pasa el modo)

@@ -16,6 +16,8 @@
  * son no-ops para que client.js pueda llamarlas sin condicionales.
  */
 
+import { SESSION_ID } from '../api/client.js';
+
 // URL base del backend
 export const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'http://127.0.0.1:8000'
@@ -100,6 +102,8 @@ export function openGallery(actionPayload) {
       </div>
     </div>
   `);
+
+  _armGalleryAutoClose();
 }
 
 /**
@@ -113,7 +117,7 @@ export function openLeadForm(actionPayload) {
   console.log('[OVERLAYS] Abriendo formulario de contacto para:', carrera);
 
   _renderModal('lead-modal', `
-    <div class="ov-modal-inner ov-lead">
+    <div class="ov-modal-inner ov-lead ov-lead-modal-card">
       <button class="ov-close" onclick="window.__ovClose('lead-modal')">✕</button>
       <div class="ov-lead-header">
         <span class="ov-lead-icon">🎓</span>
@@ -144,7 +148,7 @@ export function openLeadForm(actionPayload) {
         <p id="lead-msg" class="ov-msg"></p>
       </form>
     </div>
-  `);
+  `, 'ov-backdrop-lead');
 }
 
 /**
@@ -179,12 +183,12 @@ export function openPayment(actionPayload) {
         <p id="voucher-msg" class="ov-msg"></p>
       </form>
     </div>
-  `);
+  `, 'ov-backdrop-payment');
 }
 
 // ── Helpers internos ───────────────────────────────────────────────────────────
 
-function _renderModal(id, html) {
+function _renderModal(id, html, extraBackdropClass = '') {
   if (!_container || !document.body.contains(_container)) {
     initOverlays(_mode);
   }
@@ -201,7 +205,7 @@ function _renderModal(id, html) {
 
   const backdrop = document.createElement('div');
   backdrop.id = id;
-  backdrop.className = 'ov-backdrop';
+  backdrop.className = `ov-backdrop ${extraBackdropClass}`.trim();
   backdrop.innerHTML = html;
 
   // Cerrar al hacer click en el backdrop (fuera del inner)
@@ -217,12 +221,42 @@ function _renderModal(id, html) {
 }
 
 function _closeModal(id) {
+  if (id === 'gallery-modal') _cancelGalleryAutoClose();
   const el = document.getElementById(id);
   if (!el) return;
   el.classList.remove('ov-visible');
   el.addEventListener('transitionend', () => el.remove(), { once: true });
-  // Fallback si transitionend no se dispara
-  setTimeout(() => { if (el.parentElement) el.remove(); }, 300);
+  // Fallback si transitionend no se dispara (mayor que el fade lento de 0.7s)
+  setTimeout(() => { if (el.parentElement) el.remove(); }, 900);
+}
+
+// ── Auto-cierre temporizado de la galería ─────────────────────────────────────
+const GALLERY_AUTOCLOSE_MS = 9000;
+let _galleryTimer = null;
+
+function _cancelGalleryAutoClose() {
+  if (_galleryTimer) {
+    clearTimeout(_galleryTimer);
+    _galleryTimer = null;
+  }
+}
+
+/** Arma el timer de 9s; el hover/touch sobre la tarjeta lo cancela. */
+function _armGalleryAutoClose() {
+  _cancelGalleryAutoClose();
+  const backdrop = document.getElementById('gallery-modal');
+  if (!backdrop) return;
+
+  _galleryTimer = setTimeout(() => {
+    _galleryTimer = null;
+    const el = document.getElementById('gallery-modal');
+    if (el) el.classList.add('ov-fading');   // fade-out suave
+    _closeModal('gallery-modal');
+  }, GALLERY_AUTOCLOSE_MS);
+
+  const card = backdrop.querySelector('.ov-modal-inner') || backdrop;
+  card.addEventListener('mouseenter', _cancelGalleryAutoClose, { once: true });
+  card.addEventListener('touchstart', _cancelGalleryAutoClose, { once: true, passive: true });
 }
 
 // ── Callbacks globales (llamados desde HTML inline) ───────────────────────────
@@ -234,6 +268,9 @@ window.__submitLead = async function (e) {
   const btn    = document.getElementById('lead-submit-btn');
   const msg    = document.getElementById('lead-msg');
   const data   = new FormData(form);
+  if (SESSION_ID) {
+    data.append('session_id', SESSION_ID);
+  }
 
   const carreraDisplay = data.get('carrera_display');
   if (carreraDisplay) data.set('carrera', carreraDisplay);
@@ -308,7 +345,7 @@ const _CSS = `
   position: fixed;
   inset: 0;
   z-index: 10000;
-  background: rgba(0, 0, 0, 0.78);
+  background: rgba(0, 0, 0, 0.65);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   display: flex;
@@ -317,9 +354,20 @@ const _CSS = `
   pointer-events: auto;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.25s ease, visibility 0.25s ease;
+  transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   padding: 16px;
   box-sizing: border-box;
+}
+
+/* El backdrop del lead modal y payment modal es ultra-ligero para no oscurecer al avatar ni los subtítulos */
+.ov-backdrop-lead,
+.ov-backdrop-payment {
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  justify-content: flex-end;
+  align-items: flex-end;
+  padding: 24px;
 }
 
 .ov-backdrop.ov-visible {
@@ -327,7 +375,7 @@ const _CSS = `
   visibility: visible;
 }
 
-/* ── Tarjeta modal interior ── */
+/* ── Tarjeta modal interior (estándar: centro) ── */
 .ov-modal-inner {
   background: #1a1a2e;
   border: 1px solid rgba(255, 255, 255, 0.15);
@@ -341,13 +389,52 @@ const _CSS = `
   color: #f0f0f0;
   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7), 0 0 30px rgba(124, 108, 240, 0.2);
   transform: translateY(16px) scale(0.98);
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease;
   pointer-events: auto;
 }
 
 .ov-backdrop.ov-visible .ov-modal-inner {
   transform: translateY(0) scale(1);
 }
+
+/* ── Tarjetas no invasivas (Slide-in lateral derecho elegante y translúcido) ── */
+.ov-lead-modal-card,
+.ov-payment {
+  max-width: 420px;
+  background: rgba(18, 18, 32, 0.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(124, 108, 240, 0.35);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(124, 108, 240, 0.25);
+  transform: translateX(40px) scale(0.96);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease;
+  margin-bottom: 75px; /* Deja espacio inferior para que los subtítulos y el botón del micro se vean intactos */
+}
+
+.ov-backdrop.ov-visible .ov-lead-modal-card,
+.ov-backdrop.ov-visible .ov-payment {
+  transform: translateX(0) scale(1);
+}
+
+@media (max-width: 640px) {
+  .ov-backdrop-lead,
+  .ov-backdrop-payment {
+    justify-content: center;
+    align-items: flex-end;
+    padding: 12px;
+  }
+  .ov-lead-modal-card,
+  .ov-payment {
+    max-width: 100%;
+    transform: translateY(40px) scale(0.96);
+    margin-bottom: 85px;
+  }
+  .ov-backdrop.ov-visible .ov-lead-modal-card,
+  .ov-backdrop.ov-visible .ov-payment {
+    transform: translateY(0) scale(1);
+  }
+}
+
 
 /* ── Botón de cierre ── */
 .ov-close {
@@ -374,14 +461,27 @@ const _CSS = `
 }
 
 /* ── Galería ── */
+.ov-modal img,
 .ov-gallery-img {
   width: 100%;
-  max-height: 320px;
-  object-fit: cover;
+  max-height: 52vh;
+  object-fit: contain;
+  object-position: top center;
   border-radius: 14px;
   margin-bottom: 14px;
   display: block;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* El QR de Yape mantiene su tamaño propio (más específico que .ov-modal img) */
+.ov-modal-inner .ov-qr-img {
+  width: 190px;
+  max-height: none;
+}
+
+/* Fade-out lento para el auto-cierre de la galería */
+.ov-backdrop.ov-fading {
+  transition-duration: 0.7s;
 }
 
 .ov-gallery-info h2 {

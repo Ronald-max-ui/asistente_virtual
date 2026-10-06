@@ -16,12 +16,14 @@
  *   data: { type: "error", message: "..." }
  */
 
-import { enqueueAudio, clearAudioQueue } from '../audio/player.js';
+import { enqueueAudio, clearAudioQueue, isAudioBusy, onAudioQueueFinished } from '../audio/player.js';
 import { setIsProcessingResponse, registrarActividad } from '../avatar/animator.js';
 import { openGallery, openLeadForm, openPayment } from '../ui/overlays.js';
+import { getPersona, setPersona } from '../ui/persona.js';
 
 // ── Configuración ─────────────────────────────────────────────────────────────
-const BACKEND_URL        = 'http://127.0.0.1:8000';
+//const BACKEND_URL        = 'http://127.0.0.1:8000';
+const BACKEND_URL        = import.meta.env.VITE_API_URL || "http://localhost:8000";
 const CONNECT_TIMEOUT_MS = 20000;
 const MAX_REINTENTOS     = 2;
 
@@ -35,7 +37,7 @@ export const APP_MODE = (() => {
 })();
 
 // ── Sesión UUID única por pestaña ─────────────────────────────────────────────
-const SESSION_ID = (() => {
+export const SESSION_ID = (() => {
   const KEY = 'av_kiosk_session_id';
   let id = sessionStorage.getItem(KEY);
   if (!id) {
@@ -118,12 +120,16 @@ async function _parseSseStream(body, onEvent) {
   }
 }
 
+/** Acción visual diferida hasta el fin del habla del avatar */
+let accionVisualPendiente = null;
+
 /**
- * Despacha un evento ui_action al overlay correspondiente.
+ * Ejecuta físicamente la acción visual en los overlays.
  * @param {object} event - Payload del SSE ui_action
  */
-function _despacharUiAction(event) {
-  console.log("[UI_ACTION] Recibido evento:", event.action, event);
+function ejecutarAccionVisual(event) {
+  if (!event) return;
+  console.log("[UI_ACTION] Ejecutando accion visual:", event.action, event);
   switch (event.action) {
     case 'SHOW_GALLERY':
       openGallery(event);
@@ -136,6 +142,31 @@ function _despacharUiAction(event) {
       break;
     default:
       console.warn('[api/client] Acción UI desconocida:', event.action);
+  }
+}
+
+/**
+ * Despacha un evento ui_action al overlay correspondiente.
+ * Si el avatar está hablando o reproduciendo la cola de audio,
+ * pospone la apertura del modal hasta que el habla concluya por completo.
+ * @param {object} event - Payload del SSE ui_action
+ */
+function _despacharUiAction(event) {
+  console.log("[UI_ACTION] Recibido evento:", event.action, event);
+  const esModal = ['SHOW_GALLERY', 'OPEN_LEAD_FORM', 'SHOW_PAYMENT'].includes(event.action);
+
+  if (esModal && isAudioBusy()) {
+    console.log("[UI_ACTION] Audio ocupado: posponiendo accion visual hasta fin de voz:", event.action);
+    accionVisualPendiente = event;
+    onAudioQueueFinished(() => {
+      if (accionVisualPendiente) {
+        console.log("[UI_ACTION] Fin de audio detectado: desplegando accion visual pospuesta:", accionVisualPendiente.action);
+        ejecutarAccionVisual(accionVisualPendiente);
+        accionVisualPendiente = null;
+      }
+    });
+  } else {
+    ejecutarAccionVisual(event);
   }
 }
 
@@ -161,7 +192,8 @@ export async function consultarAsistente(pregunta, intentos = 0) {
       body:    JSON.stringify({
         mensaje:    pregunta,
         session_id: SESSION_ID,
-        mode:       APP_MODE,         // ← Nuevo: enviamos el modo al backend
+        mode:       APP_MODE,         // kiosk | web (capacidades del dispositivo)
+        persona:    getPersona(),     // info | sales (modo manual o escalado)
       }),
       signal:  controller.signal,
     });
@@ -200,6 +232,12 @@ export async function consultarAsistente(pregunta, intentos = 0) {
           );
           break;
         }
+
+        case 'mode_switch':
+          // ── Escalación automática Consulta → Vendedora (intención de compra) ─
+          console.log('[api/client] mode_switch recibido:', event.mode);
+          setPersona(event.mode, 'auto');
+          break;
 
         case 'ui_action':
           // ── Despachar acción UI (galería, formulario, pago) ────────────────

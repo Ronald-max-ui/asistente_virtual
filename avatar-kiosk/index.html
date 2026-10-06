@@ -7,6 +7,15 @@
     <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
+    <!-- Aura lumínica trasera: z-index 1 (detrás del canvas 3D, z-index 2) -->
+    <div id="lia-aura" class="aura-sales"></div>
+
+    <!-- Interruptor manual de persona (Consulta / Vendedora) -->
+    <div id="mode-switch" class="persona-sales" role="group" aria-label="Modo de Lía">
+      <button type="button" class="ms-opt" data-persona="info" aria-pressed="false">💡 Consulta</button>
+      <button type="button" class="ms-opt" data-persona="sales" aria-pressed="true">🎯 Vendedora</button>
+    </div>
+
     <div id="ui-container">
       <div id="status-badge">Toca el micrófono para hablar</div>
       <button id="mic-btn" aria-label="Hablar">

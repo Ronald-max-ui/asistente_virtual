@@ -19,7 +19,8 @@ body, html {
   left: 0;
   width: 100vw;
   height: 100vh;
-  z-index: 1;
+  z-index: 2;
+  background: transparent;
 }
 
 #ui-container {
@@ -31,7 +32,7 @@ body, html {
   flex-direction: column;
   align-items: center;
   gap: 15px;
-  z-index: 10;
+  z-index: 10005;
   pointer-events: none;
 }
 
@@ -98,4 +99,96 @@ body, html {
   padding: 0 20px;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
   min-height: 24px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AURA LUMÍNICA (z-index 1: detrás del canvas 3D, que está en z-index 2)
+   CSS no interpola gradientes entre sí, así que cada estado vive en un
+   pseudo-elemento y se hace crossfade de opacidad (1.2s).
+   ═══════════════════════════════════════════════════════════════════════════ */
+#lia-aura {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  transition: all 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#lia-aura::before,
+#lia-aura::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: all 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Estado Consulta: glow azul cian */
+#lia-aura::before {
+  background: radial-gradient(circle at 50% 40%,
+    rgba(0, 229, 255, 0.4) 0%, rgba(0, 100, 200, 0.1) 50%, transparent 75%);
+}
+
+/* Estado Vendedora: glow dorado ámbar */
+#lia-aura::after {
+  background: radial-gradient(circle at 50% 40%,
+    rgba(255, 185, 0, 0.5) 0%, rgba(220, 120, 0, 0.15) 50%, transparent 75%);
+}
+
+#lia-aura.aura-info::before  { opacity: 1; }
+#lia-aura.aura-sales::after  { opacity: 1; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SWITCH MANUAL DE PERSONA (esquina superior derecha)
+   ═══════════════════════════════════════════════════════════════════════════ */
+#mode-switch {
+  --ms-accent: #ffb900;
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 10;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(15, 15, 20, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  pointer-events: auto;
+  transition: border-color 1.2s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#mode-switch.persona-info  { --ms-accent: #00e5ff; }
+#mode-switch.persona-sales { --ms-accent: #ffb900; }
+
+#mode-switch {
+  border-color: color-mix(in srgb, var(--ms-accent) 45%, transparent);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--ms-accent) 28%, transparent);
+}
+
+#mode-switch .ms-opt {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.55);
+  font: 600 12px/1 'Segoe UI', system-ui, sans-serif;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  transition: background 0.4s ease, color 0.4s ease;
+}
+
+#mode-switch .ms-opt:hover { color: rgba(255, 255, 255, 0.85); }
+
+#mode-switch .ms-opt[aria-pressed="true"] {
+  color: #0b0b10;
+  background: var(--ms-accent);
+}
+
+@media (max-width: 480px) {
+  #mode-switch .ms-opt { padding: 6px 9px; font-size: 11px; }
 }

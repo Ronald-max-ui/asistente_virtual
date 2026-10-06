@@ -26,6 +26,7 @@ let currentAudioElement = null;
 // Cada ítem: { url: string, onEndCallback: Function|null, onPlayCallback: Function|null }
 let audioQueue     = [];
 let isPlayingQueue = false;
+let _onQueueEmptyCallback = null;
 
 function _initAudioContext() {
   if (audioContext) return;
@@ -90,7 +91,15 @@ function _playImmediate(url, onEndCallback = null, onPlayCallback = null) {
 
 /** Procesa el siguiente elemento de la cola si hay uno pendiente y no estamos reproduciendo. */
 function _processQueue() {
-  if (isPlayingQueue || audioQueue.length === 0) return;
+  if (isPlayingQueue) return;
+  if (audioQueue.length === 0) {
+    if (!_isSpeaking && _onQueueEmptyCallback) {
+      const cb = _onQueueEmptyCallback;
+      _onQueueEmptyCallback = null;
+      cb();
+    }
+    return;
+  }
   isPlayingQueue = true;
   const item = audioQueue.shift();
   _playImmediate(
@@ -98,7 +107,13 @@ function _processQueue() {
     () => {
       isPlayingQueue = false;
       if (item.onEndCallback) item.onEndCallback();
-      _processQueue(); // Encadenar el siguiente chunk
+      if (audioQueue.length === 0 && _onQueueEmptyCallback) {
+        const cb = _onQueueEmptyCallback;
+        _onQueueEmptyCallback = null;
+        cb();
+      } else {
+        _processQueue(); // Encadenar el siguiente chunk
+      }
     },
     item.onPlayCallback, // Propaga el callback de inicio al núcleo
   );
@@ -109,6 +124,24 @@ function _processQueue() {
 /** Devuelve true si hay audio reproduciéndose actualmente. */
 export function isCurrentlySpeaking() {
   return _isSpeaking;
+}
+
+/** Devuelve true si hay audio reproduciéndose o elementos esperando en la cola. */
+export function isAudioBusy() {
+  return _isSpeaking || isPlayingQueue || audioQueue.length > 0;
+}
+
+/**
+ * Registra un callback que se llamará cuando la cola actual de audio termine
+ * completamente de sonar y no queden chunks pendientes.
+ * Si ya no hay audio ocupado, ejecuta el callback inmediatamente.
+ */
+export function onAudioQueueFinished(callback) {
+  if (!isAudioBusy()) {
+    callback();
+    return;
+  }
+  _onQueueEmptyCallback = callback;
 }
 
 /** Devuelve el analyser y dataArray para el lipsync del animator. */
