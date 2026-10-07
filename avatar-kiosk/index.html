@@ -16,7 +16,11 @@
       <button type="button" class="ms-opt" data-persona="sales" aria-pressed="true">🎯 Vendedora</button>
     </div>
 
-    <div id="ui-container">
+    <!-- Subtítulos / Transcripción (flotando por encima del micrófono) -->
+    <div id="subtitles" class="captions-container"></div>
+
+    <!-- Contenedor inferior fijo: estado y botón de micrófono -->
+    <div id="ui-container" class="controls-container">
       <div id="status-badge">Toca el micrófono para hablar</div>
       <button id="mic-btn" aria-label="Hablar">
         <svg id="mic-icon" viewBox="0 0 24 24" width="28" height="28" fill="white">
@@ -24,7 +28,6 @@
           <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
         </svg>
       </button>
-      <div id="subtitles"></div>
     </div>
     <script type="module" src="/src/main.js"></script>
   </body>

@@ -24,7 +24,8 @@ export const BACKEND_URL = window.location.hostname === 'localhost' || window.lo
   : `${window.location.protocol}//${window.location.hostname}:8000`;
 
 /**
- * Resuelve una URL relativa (/static/...) contra la URL base del backend.
+ * Resuelve una URL relativa (/static/...) contra el dominio actual o URL base.
+ * Soporta desarrollo local y producción HTTPS sin fallas de Mixed Content.
  */
 export function resolverMediaUrl(urlRelativa) {
   if (!urlRelativa) return '';
@@ -32,6 +33,10 @@ export function resolverMediaUrl(urlRelativa) {
     return urlRelativa;
   }
   const cleanPath = urlRelativa.startsWith('/') ? urlRelativa : `/${urlRelativa}`;
+  // Si comienza con /static/, usar ruta relativa directa o concatenar origin para soporte HTTPS universal
+  if (cleanPath.startsWith('/static/')) {
+    return `${window.location.origin}${cleanPath}`;
+  }
   return `${BACKEND_URL}${cleanPath}`;
 }
 
@@ -86,18 +91,20 @@ export function openGallery(actionPayload) {
   const rawUrl   = resource.url || actionPayload.url || '';
   const imgUrl   = resolverMediaUrl(rawUrl);
   const fallbackUrl = resolverMediaUrl('/static/media/instituto_fachada.webp');
-  const titulo   = resource.titulo   || 'Instituto Tuinen Star';
-  const desc     = resource.descripcion || '';
+  const titulo   = resource.titulo   || actionPayload.title || 'Instituto Tuinen Star';
+  const desc     = resource.descripcion || actionPayload.description || '';
 
   console.warn('[UI_ACTION] Disparando modal de galeria:', { imgUrl, titulo, actionPayload });
 
   _renderModal('gallery-modal', `
-    <div class="ov-modal-inner ov-gallery">
-      <button class="ov-close" onclick="window.__ovClose('gallery-modal')">✕</button>
-      <img src="${imgUrl}" alt="${titulo}" class="ov-gallery-img"
-           onerror="this.onerror=null; this.src='${fallbackUrl}'">
-      <div class="ov-gallery-info">
-        <h2>${titulo}</h2>
+    <div class="ov-modal-inner ov-gallery ov-modal-content">
+      <button class="ov-close ov-close-btn" onclick="window.__ovClose('gallery-modal')">&times;</button>
+      <div class="ov-img-container">
+        <img src="${imgUrl}" alt="${titulo}" class="ov-gallery-img ov-modal-img"
+             onerror="this.onerror=null; this.src='${fallbackUrl}'" />
+      </div>
+      <div class="ov-gallery-info ov-text-container">
+        <h3>${titulo}</h3>
         <p>${desc}</p>
       </div>
     </div>
@@ -461,8 +468,28 @@ const _CSS = `
 }
 
 /* ── Galería ── */
-.ov-modal img,
+.ov-img-container {
+  width: 100%;
+  min-height: 180px;
+  max-height: 45vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  border-radius: 14px;
+  margin-bottom: 14px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.ov-modal-img,
 .ov-gallery-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.ov-modal img {
   width: 100%;
   max-height: 52vh;
   object-fit: contain;
@@ -484,13 +511,15 @@ const _CSS = `
   transition-duration: 0.7s;
 }
 
-.ov-gallery-info h2 {
+.ov-gallery-info h2,
+.ov-text-container h3 {
   font-size: 1.15rem;
   margin: 0 0 6px;
   color: #ffffff;
 }
 
-.ov-gallery-info p {
+.ov-gallery-info p,
+.ov-text-container p {
   font-size: 0.9rem;
   color: #cbd5e1;
   margin: 0;
