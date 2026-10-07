@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "program": "gastronomia",
+  "program_label": "Gastronomía",
+  "aliases": [
+    "cocina",
+    "chef"
+  ],
+  "modalities": [
+    "presencial"
+  ],
+  "shifts": [
+    "manana",
+    "tarde",
+    "noche",
+    "lunes_viernes",
+    "sabados"
+  ],
+  "prices": [
+    {
+      "concept": "inscripcion",
+      "modality": null,
+      "shift": null,
+      "amount": "80.00",
+      "currency": "PEN",
+      "status": "active",
+      "campaign": "confirmacion_inicial",
+      "starts_on": null,
+      "ends_on": null,
+      "promotions": [],
+      "observations": "Inscripción confirmada por el administrador; editable por campaña."
+    },
+    {
+      "concept": "matricula",
+      "modality": null,
+      "shift": null,
+      "amount": null,
+      "currency": "PEN",
+      "status": "pending",
+      "campaign": "confirmacion_inicial",
+      "starts_on": null,
+      "ends_on": null,
+      "promotions": [],
+      "observations": "Pendiente de confirmación oficial. Los importes anteriores del Markdown no se autorizan."
+    },
+    {
+      "concept": "mensualidad",
+      "modality": null,
+      "shift": null,
+      "amount": null,
+      "currency": "PEN",
+      "status": "pending",
+      "campaign": "confirmacion_inicial",
+      "starts_on": null,
+      "ends_on": null,
+      "promotions": [],
+      "observations": "Pendiente de confirmación oficial. Los importes anteriores del Markdown no se autorizan."
+    },
+    {
+      "concept": "mensualidad_contado",
+      "modality": null,
+      "shift": null,
+      "amount": null,
+      "currency": "PEN",
+      "status": "pending",
+      "campaign": "confirmacion_inicial",
+      "starts_on": null,
+      "ends_on": null,
+      "promotions": [],
+      "observations": "Pendiente de confirmación oficial. Los importes anteriores del Markdown no se autorizan."
+    },
+    {
+      "concept": "pago_contado",
+      "modality": null,
+      "shift": null,
+      "amount": null,
+      "currency": "PEN",
+      "status": "pending",
+      "campaign": "confirmacion_inicial",
+      "starts_on": null,
+      "ends_on": null,
+      "promotions": [],
+      "observations": "Pendiente de confirmación oficial. Los importes anteriores del Markdown no se autorizan."
+    },
+    {
+      "concept": "ciclo_completo",
+      "modality": null,
+      "shift": null,
+      "amount": null,
+      "currency": "PEN",
+      "status": "pending",
+      "campaign": "confirmacion_inicial",
+      "starts_on": null,
+      "ends_on": null,
+      "promotions": [],
+      "observations": "Pendiente de confirmación oficial. Los importes anteriores del Markdown no se autorizan."
+    },
+    {
+      "concept": "descuento",
+      "modality": null,
+      "shift": null,
+      "amount": null,
+      "currency": "PEN",
+      "status": "pending",
+      "campaign": "confirmacion_inicial",
+      "starts_on": null,
+      "ends_on": null,
+      "promotions": [],
+      "observations": "Pendiente de confirmación oficial. Los importes anteriores del Markdown no se autorizan."
+    }
+  ]
+}

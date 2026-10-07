@@ -16,7 +16,7 @@ async def exportar():
     for archivo, texto in FRASES.items():
         ruta = os.path.join(OUTPUT_DIR, archivo)
         print(f"Generando {archivo}...")
-        comunicador = edge_tts.Communicate(texto, VOZ, rate="-8%")
+        comunicador = edge_tts.Communicate(texto, VOZ, rate="-10%")
         await comunicador.save(ruta)
     print("¡Audios guardados con éxito en public/!")
 

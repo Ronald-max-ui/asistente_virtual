@@ -19,7 +19,26 @@ let _isSpeaking  = false;
 let bufferQueue        = [];
 let isPlayingQueue     = false;
 let currentSourceNode  = null;
-let _onQueueEmptyCallback = null;
+let queueCallbacks = new Set();
+let generation = 0;
+let streamHolds = 0;
+
+function invoke(callback) {
+  try { callback?.(); } catch (err) { console.error('[audio/player] Callback fallido:', err); }
+}
+
+function notifyFinished() {
+  if (isAudioBusy()) return;
+  const callbacks = [...queueCallbacks];
+  queueCallbacks.clear();
+  callbacks.forEach(invoke);
+}
+
+export function beginAudioStream() { streamHolds++; }
+export function endAudioStream() {
+  streamHolds = Math.max(0, streamHolds - 1);
+  notifyFinished();
+}
 
 // Helper: Convierte string base64 a ArrayBuffer estándar
 export function base64ToArrayBuffer(base64) {
@@ -78,171 +97,114 @@ export function unlockAudio() {
  */
 function _processBufferQueue() {
   if (isPlayingQueue) return;
-
-  if (bufferQueue.length === 0) {
-    isPlayingQueue = false;
+  if (!bufferQueue.length) {
     _isSpeaking = false;
-    if (_onQueueEmptyCallback) {
-      const cb = _onQueueEmptyCallback;
-      _onQueueEmptyCallback = null;
-      cb();
-    }
+    notifyFinished();
     return;
   }
-
-  isPlayingQueue = true;
-  _isSpeaking = true;
-  const item = bufferQueue.shift();
-
+  // Se reservan posiciones antes de descargar/decodificar para conservar el orden.
+  const item = bufferQueue[0];
+  if (!item.ready) return;
+  bufferQueue.shift();
+  if (!item.buffer) {
+    invoke(item.onPlayCallback); // Subtítulos siguen disponibles aunque falle el audio.
+    invoke(item.onEndCallback);
+    _processBufferQueue();
+    return;
+  }
   try {
     const ctx = _initAudioContext();
-    if (ctx.state === 'suspended') {
-      ctx.resume().catch(() => {});
-    }
-
+    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
     const source = ctx.createBufferSource();
     source.buffer = item.buffer;
-    currentSourceNode = source;
-
-    // Conectar a analyser (para lipsync de Lía) y de ahí a destination (parlantes)
     source.connect(analyser);
-
-    // Disparar sincronización de subtítulos al comenzar la reproducción
-    if (item.onPlayCallback) {
-      item.onPlayCallback();
-    }
-
+    currentSourceNode = source;
+    isPlayingQueue = true;
+    _isSpeaking = true;
     source.onended = () => {
+      source.disconnect();
+      // Una cancelación no puede finalizar una nueva fuente ni disparar callbacks viejos.
+      if (item.generation !== generation || currentSourceNode !== source) return;
       currentSourceNode = null;
-      if (item.onEndCallback) {
-        item.onEndCallback();
-      }
       isPlayingQueue = false;
-      _processBufferQueue(); // Encadenar el siguiente fragmento
+      _isSpeaking = false;
+      invoke(item.onEndCallback);
+      _processBufferQueue();
     };
-
     source.start(0);
+    invoke(item.onPlayCallback);
   } catch (err) {
-    console.error('[audio/player] Error reproduciendo buffer en AudioBufferSourceNode:', err);
-    if (item.onPlayCallback) item.onPlayCallback();
-    if (item.onEndCallback) item.onEndCallback();
+    console.error('[audio/player] Reproducción fallida:', err);
+    currentSourceNode?.disconnect();
+    currentSourceNode = null;
     isPlayingQueue = false;
+    _isSpeaking = false;
+    invoke(item.onPlayCallback);
+    invoke(item.onEndCallback);
     _processBufferQueue();
   }
 }
 
-/**
- * Encola un fragmento de audio en Base64 recibido por SSE.
- * Decodifica asíncronamente con decodeAudioData y lo encadena a la cola de reproducción.
- *
- * @param {string} b64Data - String en formato base64 con audio MP3 o WAV
- * @param {Function|null} onEndCallback - Callback al finalizar este chunk
- * @param {Function|null} onPlayCallback - Callback al iniciar este chunk (para subtítulos sincronizados)
- */
-export async function enqueueBase64Audio(b64Data, onEndCallback = null, onPlayCallback = null) {
-  if (!b64Data) return;
+function reserveAudio(onEndCallback, onPlayCallback) {
+  const item = { generation, ready: false, buffer: null, onEndCallback, onPlayCallback };
+  bufferQueue.push(item);
+  return item;
+}
+
+async function decodeItem(item, load) {
   try {
+    const arrayBuffer = await load();
+    if (item.generation !== generation) return;
     const ctx = _initAudioContext();
-    if (ctx.state === 'suspended') {
-      await ctx.resume().catch(() => {});
-    }
-
-    const arrayBuffer = base64ToArrayBuffer(b64Data);
-
-    // decodeAudioData con soporte dual para callbacks de Safari legado y Promesas
-    ctx.decodeAudioData(
-      arrayBuffer,
-      (audioBuffer) => {
-        bufferQueue.push({
-          buffer: audioBuffer,
-          onEndCallback,
-          onPlayCallback,
-        });
-        _processBufferQueue();
-      },
-      (decodeErr) => {
-        console.warn('[audio/player] Error decodificando audio chunk:', decodeErr);
-        if (onPlayCallback) onPlayCallback();
-        if (onEndCallback) onEndCallback();
-      }
-    );
+    // Adaptador callbacks/Promesa para Safari y navegadores modernos.
+    item.buffer = await new Promise((resolve, reject) => {
+      const promise = ctx.decodeAudioData(arrayBuffer, resolve, reject);
+      promise?.then(resolve, reject);
+    });
   } catch (err) {
-    console.error('[audio/player] Error procesando base64 audio:', err);
-    if (onPlayCallback) onPlayCallback();
-    if (onEndCallback) onEndCallback();
+    console.warn('[audio/player] Audio no disponible:', err);
+  } finally {
+    if (item.generation === generation) {
+      item.ready = true;
+      _processBufferQueue();
+    }
   }
 }
 
-/**
- * Compatibilidad con la firma anterior enqueueAudio(url, ...).
- * Si la url es data: o blob: o base64, la delega a decodificación.
- */
-export async function enqueueAudio(urlOrB64, onEndCallback = null, onPlayCallback = null) {
-  if (!urlOrB64) return;
+export function enqueueBase64Audio(b64Data, onEndCallback = null, onPlayCallback = null) {
+  if (!b64Data) return Promise.resolve();
+  const item = reserveAudio(onEndCallback, onPlayCallback);
+  return decodeItem(item, () => base64ToArrayBuffer(b64Data));
+}
+
+export function enqueueAudio(urlOrB64, onEndCallback = null, onPlayCallback = null) {
+  if (!urlOrB64) return Promise.resolve();
   if (urlOrB64.startsWith('data:audio/')) {
-    const b64 = urlOrB64.split(',')[1];
-    return enqueueBase64Audio(b64, onEndCallback, onPlayCallback);
+    return enqueueBase64Audio(urlOrB64.split(',')[1], onEndCallback, onPlayCallback);
   }
-  try {
-    // Si es una URL o Blob URL, descargamos el ArrayBuffer para decodificarlo nativamente con Web Audio
+  const item = reserveAudio(onEndCallback, onPlayCallback);
+  return decodeItem(item, async () => {
     const res = await fetch(urlOrB64);
-    const arrayBuffer = await res.arrayBuffer();
-    const ctx = _initAudioContext();
-    ctx.decodeAudioData(
-      arrayBuffer,
-      (audioBuffer) => {
-        bufferQueue.push({
-          buffer: audioBuffer,
-          onEndCallback,
-          onPlayCallback,
-        });
-        _processBufferQueue();
-      },
-      (err) => {
-        console.warn('[audio/player] Error decodificando URL audio:', err);
-        if (onPlayCallback) onPlayCallback();
-        if (onEndCallback) onEndCallback();
-      }
-    );
-  } catch (e) {
-    console.warn('[audio/player] Fallo al cargar audio desde URL:', e);
-    if (onPlayCallback) onPlayCallback();
-    if (onEndCallback) onEndCallback();
-  }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.arrayBuffer();
+  });
 }
 
-/**
- * Reproduce un audio inmediatamente desde URL (ej. atracciones), cancelando colas previas.
- */
-export async function playAudio(url, onEndCallback = null) {
-  clearAudioQueue();
+export function playAudio(url, onEndCallback = null) {
   stopCurrentAudio();
-  enqueueAudio(url, onEndCallback, null);
+  return enqueueAudio(url, onEndCallback);
 }
 
-/**
- * Devuelve true si hay audio reproduciéndose activamente.
- */
-export function isCurrentlySpeaking() {
-  return _isSpeaking;
-}
+export function isCurrentlySpeaking() { return _isSpeaking; }
 
-/**
- * Devuelve true si hay audio reproduciéndose o elementos encolados pendientes.
- */
 export function isAudioBusy() {
-  return _isSpeaking || isPlayingQueue || bufferQueue.length > 0;
+  return _isSpeaking || isPlayingQueue || bufferQueue.length > 0 || streamHolds > 0;
 }
 
-/**
- * Registra un callback para cuando la cola actual termine completamente.
- */
 export function onAudioQueueFinished(callback) {
-  if (!isAudioBusy()) {
-    callback();
-    return;
-  }
-  _onQueueEmptyCallback = callback;
+  if (!isAudioBusy()) { invoke(callback); return () => {}; }
+  queueCallbacks.add(callback);
+  return () => queueCallbacks.delete(callback);
 }
 
 /**
@@ -257,22 +219,21 @@ export function getAnalyser() {
  * Vacía la cola de reproducción.
  */
 export function clearAudioQueue() {
-  bufferQueue = [];
+  // Cancelar también cargas/decodificaciones antiguas; no reaparecen en la nueva cola.
+  stopCurrentAudio();
 }
 
-/**
- * Detiene inmediatamente la reproducción actual y vacía la cola.
- */
 export function stopCurrentAudio() {
+  generation++;
   bufferQueue = [];
+  queueCallbacks.clear();
+  streamHolds = 0;
   isPlayingQueue = false;
   _isSpeaking = false;
-  if (currentSourceNode) {
-    try {
-      currentSourceNode.stop();
-      currentSourceNode.disconnect();
-    } catch (_) {}
-    currentSourceNode = null;
+  const source = currentSourceNode;
+  currentSourceNode = null;
+  if (source) {
+    source.onended = null;
+    try { source.stop(); source.disconnect(); } catch (_) {}
   }
 }
-

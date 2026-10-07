@@ -3,12 +3,16 @@ config.py — Configuración centralizada del Asistente Virtual.
 Todas las constantes y variables de entorno viven aquí.
 """
 import os
+from commercial_runtime import database_path, admin_token
 from dotenv import load_dotenv
 
 load_dotenv()
 
 
 class Settings:
+    # Configuración comercial. Administración bloqueada cuando el token está vacío.
+    commercial_db_path = str(database_path())
+    admin_api_token = admin_token()
     # ── Groq LLM ────────────────────────────────────────────────────────────
     groq_api_key: str = os.getenv("GROQ_API_KEY", "")
     groq_model: str = os.getenv("GROQ_MODEL", "qwen/qwen3.8-27b")

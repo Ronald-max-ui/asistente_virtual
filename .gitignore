@@ -11,6 +11,7 @@ __pycache__/
 *.pyc
 backend/chroma_db/
 backend/storage/
+backend/static/avatars/*.vrm
 
 # Node y Frontend
 avatar-kiosk/node_modules/

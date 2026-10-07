@@ -4,40 +4,28 @@
  * Gestiona tres modales superpuestos sobre el canvas del avatar:
  *
  *   1. Gallery Modal   → Muestra una foto grande con título y descripción.
- *                        Disparado por evento SSE `ui_action` SHOW_GALLERY.
+ *                        Disparado por evento SSE `ui_action` show_gallery.
  *
  *   2. Lead Form Modal → Formulario de contacto (Nombre, WhatsApp, Carrera).
- *                        Disparado por OPEN_LEAD_FORM. Solo en modo web.
+ *                        Disparado por show_contact. Solo en modo web.
  *
  *   3. Payment Modal   → QR Yape + número + monto + subida de voucher.
- *                        Disparado por SHOW_PAYMENT. Solo en modo web.
+ *                        Disparado por show_payment. Solo en modo web.
  *
- * En modo kiosk, este módulo no monta nada y las funciones de apertura
- * son no-ops para que client.js pueda llamarlas sin condicionales.
+ * En modo kiosk, las galerías están disponibles; contacto y pago permanecen
+ * deshabilitados. Conserva los mismos estilos en ambos dispositivos.
  */
 
 import { SESSION_ID } from '../api/client.js';
 
-// URL base del backend
-export const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'http://127.0.0.1:8000'
-  : `${window.location.protocol}//${window.location.hostname}:8000`;
+import { apiUrl, resolverMediaUrl } from '../api/config.js';
+export { BACKEND_URL, resolverMediaUrl } from '../api/config.js';
 
-/**
- * Resuelve una URL relativa (/static/...) contra el dominio actual o URL base.
- * Soporta desarrollo local y producción HTTPS sin fallas de Mixed Content.
- */
-export function resolverMediaUrl(urlRelativa) {
-  if (!urlRelativa) return '';
-  if (urlRelativa.startsWith('http://') || urlRelativa.startsWith('https://')) {
-    return urlRelativa;
-  }
-  const cleanPath = urlRelativa.startsWith('/') ? urlRelativa : `/${urlRelativa}`;
-  // Si comienza con /static/, usar ruta relativa directa o concatenar origin para soporte HTTPS universal
-  if (cleanPath.startsWith('/static/')) {
-    return `${window.location.origin}${cleanPath}`;
-  }
-  return `${BACKEND_URL}${cleanPath}`;
+/** Escape para nodos de texto y atributos entre comillas; sin ejecución inline. */
+export function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  })[c]);
 }
 
 // ── Estado del modo ────────────────────────────────────────────────────────────
@@ -55,8 +43,7 @@ let _container = null;
 export function initOverlays(mode = 'web') {
   _mode = mode;
 
-  // En modo kiosk no montamos overlays pesados
-  if (_mode === 'kiosk') return;
+  // La galería también está disponible en kiosco; contacto/pago siguen siendo web.
 
   // Evitar duplicar contenedor si ya existía
   let existingContainer = document.getElementById('overlay-container');
@@ -84,55 +71,55 @@ export function initOverlays(mode = 'web') {
  * @param {object} actionPayload - Payload del SSE ui_action (contiene resource)
  */
 export function openGallery(actionPayload) {
-  if (_mode === 'kiosk') {
-    return;
-  }
   const resource = actionPayload.resource || {};
   const rawUrl   = resource.url || actionPayload.url || '';
   const imgUrl   = resolverMediaUrl(rawUrl);
-  const fallbackUrl = resolverMediaUrl('/static/media/instituto_fachada.webp');
+
   const titulo   = resource.titulo   || actionPayload.title || 'Instituto Tuinen Star';
   const desc     = resource.descripcion || actionPayload.description || '';
 
   console.warn('[UI_ACTION] Disparando modal de galeria:', { imgUrl, titulo, actionPayload });
 
-  _renderModal('gallery-modal', `
+  const modal = _renderModal('gallery-modal', `
     <div class="ov-modal-inner ov-gallery ov-modal-content">
-      <button class="ov-close ov-close-btn" onclick="window.__ovClose('gallery-modal')">&times;</button>
+      <button class="ov-close ov-close-btn">&times;</button>
       <div class="ov-img-container">
-        <img src="${imgUrl}" alt="${titulo}" class="ov-gallery-img ov-modal-img"
-             onerror="this.onerror=null; this.src='${fallbackUrl}'" />
+        <img src="${escapeHtml(imgUrl)}" alt="${escapeHtml(titulo)}" class="ov-gallery-img ov-modal-img" />
       </div>
       <div class="ov-gallery-info ov-text-container">
-        <h3>${titulo}</h3>
-        <p>${desc}</p>
+        <h3>${escapeHtml(titulo)}</h3>
+        <p>${escapeHtml(desc)}</p>
       </div>
     </div>
   `);
 
+  modal?.querySelector('img')?.addEventListener('error', (e) => {
+    e.target.hidden = true;
+    modal.querySelector('p').textContent = 'Imagen no disponible por el momento.';
+  }, { once: true });
   _armGalleryAutoClose();
 }
 
 /**
  * Abre el formulario de captura de lead.
- * @param {object} actionPayload - { carrera: string }
+ * @param {object} actionPayload - { program_label: string }
  */
 export function openLeadForm(actionPayload) {
   if (_mode === 'kiosk') return;
-  const carrera = actionPayload.carrera || '';
+  const carrera = actionPayload.program_label || '';
 
   console.log('[OVERLAYS] Abriendo formulario de contacto para:', carrera);
 
-  _renderModal('lead-modal', `
+  const modal = _renderModal('lead-modal', `
     <div class="ov-modal-inner ov-lead ov-lead-modal-card">
-      <button class="ov-close" onclick="window.__ovClose('lead-modal')">✕</button>
+      <button class="ov-close">✕</button>
       <div class="ov-lead-header">
         <span class="ov-lead-icon">🎓</span>
         <h2>¡Reserva tu lugar!</h2>
         <p>Déjanos tus datos y un asesor te contactará por WhatsApp.</p>
       </div>
-      <form id="lead-form" onsubmit="window.__submitLead(event)">
-        <input type="hidden" name="carrera" value="${carrera}">
+      <form id="lead-form">
+        <input type="hidden" name="carrera" value="${escapeHtml(carrera)}">
         <div class="ov-field">
           <label>Nombre completo *</label>
           <input type="text" name="nombre" required placeholder="Tu nombre" autocomplete="name">
@@ -143,7 +130,7 @@ export function openLeadForm(actionPayload) {
         </div>
         <div class="ov-field">
           <label>Carrera / Curso de interés</label>
-          <input type="text" name="carrera_display" value="${carrera}" placeholder="Ej: Gastronomía">
+          <input type="text" name="carrera_display" value="${escapeHtml(carrera)}" placeholder="Ej: Gastronomía">
         </div>
         <div class="ov-field">
           <label>Notas adicionales</label>
@@ -156,41 +143,43 @@ export function openLeadForm(actionPayload) {
       </form>
     </div>
   `, 'ov-backdrop-lead');
+  modal?.querySelector('form')?.addEventListener('submit', submitLead);
 }
 
 /**
  * Abre el modal de pago con QR Yape y subida de voucher.
- * @param {object} actionPayload - { carrera, monto, qr_url, yape_numero }
+ * @param {object} actionPayload - { program_label, amount, concept, confirmed, qr_url, payment_number }
  */
 export function openPayment(actionPayload) {
   if (_mode === 'kiosk') return;
-  const carrera     = actionPayload.carrera    || '';
-  const monto       = actionPayload.monto      || '';
-  const rawQrUrl    = actionPayload.qr_url     || '/static/media/yape_qr.webp';
-  const qrUrl       = resolverMediaUrl(rawQrUrl);
-  const yapeNumero  = actionPayload.yape_numero || '994 773 335';
-
-  console.log('[OVERLAYS] Abriendo modal de pago con QR:', qrUrl, { carrera, monto });
-
-  _renderModal('payment-modal', `
-    <div class="ov-modal-inner ov-payment">
-      <button class="ov-close" onclick="window.__ovClose('payment-modal')">✕</button>
-      <h2>Paga tu matrícula con Yape</h2>
-      <p class="ov-payment-sub">Carrera: <strong>${carrera}</strong> — Monto: <strong>${monto} soles</strong></p>
-      <img src="${qrUrl}" alt="QR Yape" class="ov-qr-img"
-           onerror="this.style.display='none'">
-      <p class="ov-yape-num">📱 Yape al <strong>${yapeNumero}</strong></p>
+  const carrera = String(actionPayload.program_label || 'Programa por confirmar');
+  const monto = actionPayload.amount;
+  const concepto = String(actionPayload.concept_label || actionPayload.concept || '').replaceAll('_', ' ');
+  const confirmed = actionPayload.confirmed === true && /^\d+(\.\d{1,2})?$/.test(String(monto)) && Number(monto) > 0;
+  const qrUrl = confirmed ? resolverMediaUrl(actionPayload.qr_url || '') : '';
+  const yapeNumero = actionPayload.payment_number || '';
+  const paymentContent = confirmed ? `
+      <p class="ov-payment-sub">Carrera: <strong>${escapeHtml(carrera)}</strong> — Monto: <strong>${escapeHtml(monto)} soles</strong></p>
+      <img src="${escapeHtml(qrUrl)}" alt="QR Yape" class="ov-qr-img">
+      <p class="ov-yape-num">📱 Yape al <strong>${escapeHtml(yapeNumero)}</strong></p>
       <hr class="ov-divider">
-      <p class="ov-upload-label">Sube tu voucher aquí para confirmar tu pago:</p>
-      <form id="voucher-form" onsubmit="window.__submitVoucher(event, '${carrera}', '${monto}')">
-        <input type="file" name="imagen" accept="image/*" required class="ov-file-input" id="voucher-file">
-        <button type="submit" class="ov-btn-primary" id="voucher-submit-btn">
-          Enviar comprobante ✓
-        </button>
+      <p class="ov-upload-label">Sube tu voucher aquí para solicitar la verificación de tu pago:</p>
+      <form id="voucher-form">
+        <input type="file" name="imagen" accept="image/jpeg,image/png,image/webp" required class="ov-file-input" id="voucher-file">
+        <button type="submit" class="ov-btn-primary" id="voucher-submit-btn">Enviar comprobante ✓</button>
         <p id="voucher-msg" class="ov-msg"></p>
-      </form>
+      </form>` : `
+      <p class="ov-payment-sub">Carrera: <strong>${escapeHtml(carrera)}</strong></p>
+      <p class="ov-msg">Importe pendiente de confirmación oficial. No realices un pago hasta confirmarlo.</p>`;
+  const modal = _renderModal('payment-modal', `
+    <div class="ov-modal-inner ov-payment">
+      <button class="ov-close">✕</button>
+      <h2>${confirmed ? `Paga tu ${escapeHtml(concepto)} con Yape` : `Consulta de ${escapeHtml(concepto)}`}</h2>
+      ${paymentContent}
     </div>
   `, 'ov-backdrop-payment');
+  modal?.querySelector('img')?.addEventListener('error', (e) => { e.target.hidden = true; }, { once: true });
+  modal?.querySelector('form')?.addEventListener('submit', (e) => submitVoucher(e, actionPayload));
 }
 
 // ── Helpers internos ───────────────────────────────────────────────────────────
@@ -225,6 +214,8 @@ function _renderModal(id, html, extraBackdropClass = '') {
   // Forzar reflow y animar entrada
   void backdrop.offsetWidth;
   backdrop.classList.add('ov-visible');
+  backdrop.querySelector('.ov-close')?.addEventListener('click', () => _closeModal(id));
+  return backdrop;
 }
 
 function _closeModal(id) {
@@ -266,10 +257,8 @@ function _armGalleryAutoClose() {
   card.addEventListener('touchstart', _cancelGalleryAutoClose, { once: true, passive: true });
 }
 
-// ── Callbacks globales (llamados desde HTML inline) ───────────────────────────
-window.__ovClose = _closeModal;
-
-window.__submitLead = async function (e) {
+// ── Formularios: listeners locales, sin JavaScript inline ─────────────────────
+async function submitLead(e) {
   e.preventDefault();
   const form   = e.target;
   const btn    = document.getElementById('lead-submit-btn');
@@ -287,7 +276,7 @@ window.__submitLead = async function (e) {
   btn.textContent = 'Enviando...';
 
   try {
-    const res = await fetch(`${BACKEND_URL}/api/leads`, { method: 'POST', body: data });
+    const res = await fetch(apiUrl('/api/leads'), { method: 'POST', body: data });
     const json = await res.json();
     if (res.ok) {
       msg.textContent = '¡Listo! Te contactaremos pronto por WhatsApp.';
@@ -305,20 +294,23 @@ window.__submitLead = async function (e) {
   }
 };
 
-window.__submitVoucher = async function (e, carrera, monto) {
+async function submitVoucher(e, action) {
   e.preventDefault();
   const form = e.target;
   const btn  = document.getElementById('voucher-submit-btn');
   const msg  = document.getElementById('voucher-msg');
   const data = new FormData(form);
-  data.append('carrera', carrera);
-  data.append('monto',   monto);
+  data.append('carrera', action.program);
+  data.append('monto', String(action.amount));
+  data.append('concepto', action.concept);
+  if (action.modality) data.append('modalidad', action.modality);
+  if (action.shift) data.append('turno', action.shift);
 
   btn.disabled = true;
   btn.textContent = 'Subiendo...';
 
   try {
-    const res  = await fetch(`${BACKEND_URL}/api/vouchers`, { method: 'POST', body: data });
+    const res  = await fetch(apiUrl('/api/vouchers'), { method: 'POST', body: data });
     const json = await res.json();
     if (res.ok) {
       msg.textContent = '¡Comprobante recibido! Verificaremos tu pago pronto.';

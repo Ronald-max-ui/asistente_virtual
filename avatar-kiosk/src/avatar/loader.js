@@ -3,7 +3,7 @@
  *
  * Responsabilidades:
  *  - Registrar el plugin VRM en GLTFLoader.
- *  - Cargar el modelo /avatar.vrm y añadirlo a la escena.
+ *  - Consultar el avatar seleccionado en backend y añadirlo a la escena.
  *  - Aplicar la postura inicial (brazos descansando).
  *  - Exponer getCurrentVrm() para que otros módulos accedan al modelo.
  */
@@ -11,6 +11,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm';
+import { fetchAvatarUrl } from '../api/publicConfig.js';
 
 let currentVrm = null;
 
@@ -25,12 +26,15 @@ export function getCurrentVrm() {
  *
  * @param {THREE.Scene} scene - La escena Three.js donde añadir el avatar.
  */
-export function loadAvatar(scene) {
-  const loader = new GLTFLoader();
-  loader.register((parser) => new VRMLoaderPlugin(parser));
+export async function loadAvatar(scene) {
+  try {
+    const url = await fetchAvatarUrl();
+    const loader = new GLTFLoader();
+    loader.register((parser) => new VRMLoaderPlugin(parser));
 
-  loader.load('/avatar.vrm', (gltf) => {
+    const gltf = await loader.loadAsync(url);
     const vrm = gltf.userData.vrm;
+    if (!vrm) throw new Error('El archivo seleccionado no contiene un avatar VRM.');
 
     // Optimizaciones de geometría recomendadas por three-vrm
     VRMUtils.removeUnnecessaryVertices(gltf.scene);
@@ -49,5 +53,9 @@ export function loadAvatar(scene) {
     }
 
     console.log('[avatar/loader] Modelo VRM cargado correctamente.');
-  });
+  } catch (error) {
+    console.warn('[avatar/loader] No se pudo cargar el avatar configurado:', error);
+    const badge = document.getElementById('status-badge');
+    if (badge) badge.textContent = 'Avatar no disponible';
+  }
 }

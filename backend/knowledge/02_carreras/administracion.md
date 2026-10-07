@@ -37,31 +37,12 @@ modalidad: ["presencial", "virtual"]
 
 Clases en vivo por Google Meet (grabadas para repaso). Gestión académica por plataforma Q10.
 
-## Costos y Planes de Pago
+## Información comercial vigente
 
-### Modalidad Presencial
+La única fuente de tarifas, campañas y promociones de este programa es [administracion.pricing.json](administracion.pricing.json).
+Lía consulta PricingService directamente; los importes no dependen del índice vectorial.
+No copies precios a este Markdown. Un estado `pending` no significa gratuito.
 
-| Concepto | Monto |
-|---|---|
-| Inscripción | Gratuita (por promoción vigente) |
-| Matrícula | 100 soles |
-| Cuota mensual regular (× 5 al ciclo) | 250 soles |
-| **Total ciclo regular** | **1,250 soles** |
-| Cuota mensual pagando ciclo al contado | 225 soles |
-| **Total ciclo al contado** | **1,125 soles** |
-| Ahorro por pago adelantado | 125 soles |
-
-### Modalidad Virtual
-
-| Concepto | Monto |
-|---|---|
-| Inscripción | Gratuita (por promoción vigente) |
-| Matrícula | 100 soles |
-| Cuota mensual regular (× 5 al ciclo) | 200 soles |
-| **Total ciclo regular** | **1,000 soles** |
-| Cuota mensual pagando ciclo al contado | 180 soles |
-| **Total ciclo al contado** | **900 soles** |
-| Ahorro por pago adelantado | 100 soles |
 
 ## Metodología y Herramientas
 

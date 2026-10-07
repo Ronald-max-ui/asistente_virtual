@@ -10,7 +10,7 @@ tags: ["admision", "matricula", "inscripcion", "requisitos", "documentos", "pago
 
 ## Proceso de Admisión e Inscripción
 
-La inscripción es actualmente **gratuita** por promoción vigente (valor regular: 80 soles).
+El costo o gratuidad de la inscripción depende de la campaña vigente del programa. Consulta su archivo `*.pricing.json` mediante PricingService; un precio pendiente no significa gratuito.
 
 El postulante puede iniciar su matrícula presentando únicamente su **Documento Nacional de Identidad (DNI)** para asegurar su vacante. Dispone de un plazo máximo de **15 días** para presentar los documentos restantes:
 
@@ -45,16 +45,8 @@ Si el estudiante interrumpe la carrera o curso por **más de 1 año** y decide r
 
 ## Pago de Matrícula por Programa
 
-| Programa | Matrícula |
-|---|---|
-| Contabilidad (presencial y virtual) | 100 soles |
-| Administración de Empresas (presencial y virtual) | 100 soles |
-| Guía Oficial de Turismo (presencial y virtual) | 100 soles |
-| Gastronomía (presencial lunes a viernes) | 250 soles |
-| Gastronomía (presencial sábados) | 250 soles |
-| Curso de Bartender | 150 soles |
-| Curso de Panadería y Pastelería | 150 soles |
+Las matrículas se consultan directamente en el archivo comercial `*.pricing.json` de cada programa, bajo `02_carreras` o `03_cursos_cortos`. No se mantienen importes duplicados en este documento.
 
 ## Beneficio por Pago Adelantado (Ciclo Completo al Contado)
 
-Al pagar el ciclo completo al contado, la cuota mensual equivalente se reduce. El descuento es del 10% sobre el total del ciclo. Aplica a carreras técnicas. Consultar el documento específico de cada carrera para el monto exacto.
+Los pagos al contado, totales de ciclo y promociones dependen de la campaña vigente de cada programa y modalidad. PricingService consulta los importes finales autorizados y las condiciones de su archivo comercial; no se deducen descuentos ni totales desde este texto.

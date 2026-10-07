@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "test": "node --test tests/phase1.test.js tests/overlays.test.js tests/client.test.js tests/publicConfig.test.js",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"

@@ -27,7 +27,7 @@ Dos puntos: la Sede Principal en San Sebastián (Calle Bellavista 130 y 140) don
 Solo tu DNI para iniciar la matrícula y reservar tu vacante. Tienes hasta 15 días para regularizar el certificado de estudios, la fotografía tamaño carnet y la partida de nacimiento.
 
 **¿La inscripción tiene costo?**
-La inscripción tiene el valor de 80 soles.
+El importe o gratuidad se consulta en PricingService desde el archivo comercial del programa y su campaña vigente. Un estado pendiente no significa gratuito.
 
 **¿Cómo reservo mi vacante?**
 La vacante se reserva formalmente con el pago de la matrícula del programa elegido. Las vacantes son limitadas.
@@ -46,7 +46,7 @@ Por Yape al número 994 773 335 (a nombre de Corporativo Tuinen Star), por trans
 No. Los montos se mantienen congelados mientras estudies de manera continua y regular. Solo cambian si interrumpes la carrera por más de 1 año y decides retomar.
 
 **¿Hay descuento si pago el ciclo completo al contado?**
-Sí. Al pagar el ciclo completo por adelantado, la cuota mensual equivalente baja un 10%. Por ejemplo, en Gastronomía presencial la cuota regular es 399 soles, pero pagando al contado equivale a 359 soles por mes.
+Las promociones y los importes finales dependen de la campaña, programa y modalidad. Consulta PricingService; no se aplica un porcentaje general ni se deducen ahorros desde el contenido informativo.
 
 ---
 
@@ -94,7 +94,7 @@ No. El curso está diseñado para aprender desde cero. No se requiere experienci
 ## Sobre Gastronomía en Detalle
 
 **¿Cuánto cuesta la matrícula de Gastronomía?**
-La matrícula de Gastronomía es de 250 soles (más alta que las otras carreras porque incluye uniforme e insumos).
+Consulta la matrícula vigente de Gastronomía en su archivo `02_carreras/gastronomia.pricing.json` mediante PricingService, indicando modalidad y turno si hay tarifas diferentes.
 
 **¿Qué implementos debo llevar a Gastronomía?**
 Solo tu tabla de picar y un cuchillo. Todo lo demás —uniforme, insumos, utensilios y equipos— está incluido.

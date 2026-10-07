@@ -31,15 +31,14 @@ modalidad: ["presencial"]
 
 **Lugar de clases:** Sede Principal de San Sebastián (Calle Bellavista N.º 130 y 140, Cusco).
 
-## Costos e Inscripción
+## Información comercial vigente
 
-| Concepto | Monto |
-|---|---|
-| Matrícula | 150 soles |
-| Mensualidad | 300 soles (por cada uno de los 3 meses) |
-| **Costo total estimado** | **1,050 soles** |
+La única fuente de tarifas, campañas y promociones de este programa es [panaderia_pasteleria.pricing.json](panaderia_pasteleria.pricing.json).
+Lía consulta PricingService directamente; los importes no dependen del índice vectorial.
+No copies precios a este Markdown. Un estado `pending` no significa gratuito.
 
 **Cupos limitados por turno.** Se asignan por orden de matrícula.
+
 
 ## Contenido Temático
 

@@ -38,31 +38,12 @@ modalidad: ["presencial"]
 
 **Lugar de clases:** Sede Principal de San Sebastián (Calle Bellavista N.º 130 y 140, Cusco).
 
-## Costos y Planes de Pago
+## Información comercial vigente
 
-### Modalidad Presencial Lunes a Viernes
+La única fuente de tarifas, campañas y promociones de este programa es [gastronomia.pricing.json](gastronomia.pricing.json).
+Lía consulta PricingService directamente; los importes no dependen del índice vectorial.
+No copies precios a este Markdown. Un estado `pending` no significa gratuito.
 
-| Concepto | Monto |
-|---|---|
-| Inscripción | Gratuita (por promoción vigente) |
-| Matrícula | 250 soles |
-| Cuota mensual regular (× 5 al ciclo) | 399 soles |
-| **Total ciclo regular** | **1,995 soles** |
-| Cuota mensual pagando ciclo al contado | 359.10 soles |
-| **Total ciclo al contado** | **1,795.50 soles** |
-| Ahorro por pago adelantado | 199.50 soles |
-
-### Modalidad Presencial Sábados
-
-| Concepto | Monto |
-|---|---|
-| Inscripción | Gratuita (por promoción vigente) |
-| Matrícula | 250 soles |
-| Cuota mensual regular (× 5 al ciclo) | 350 soles |
-| **Total ciclo regular** | **1,750 soles** |
-| Cuota mensual pagando ciclo al contado | 315 soles |
-| **Total ciclo al contado** | **1,575 soles** |
-| Ahorro por pago adelantado | 175 soles |
 
 ## Beneficios e Implementos Incluidos
 

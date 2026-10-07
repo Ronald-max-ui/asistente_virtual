@@ -59,6 +59,7 @@ let waveTimer = 0;
 // ── Escucha activa y procesamiento de respuesta ────────────────────────────────
 let isListening = false;
 let isProcessingResponse = false;
+let attractionAudioEnabled = false;
 
 // ── Máquina de estados de atracción ───────────────────────────────────────────
 // Estados: 'NORMAL' | 'CURIOUS' | 'ATTRACT_FORWARD' | 'SPEAKING_ATTRACT' | 'RETURNING'
@@ -545,7 +546,7 @@ function _updateAttractionStateMachine(delta, isSpeaking) {
  */
 export function startAnimation(renderer, scene, camera, mode = 'web') {
   // En modo web no reproducimos audios de atracción (política autoplay móvil)
-  const attractionAudioEnabled = (mode === 'kiosk');
+  attractionAudioEnabled = (mode === 'kiosk');
   const clock = new THREE.Clock();
 
   function animate() {

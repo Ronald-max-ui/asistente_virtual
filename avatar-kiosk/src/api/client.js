@@ -11,20 +11,19 @@
  * Protocolo SSE completo (v4.0):
  *   data: { type: "text",  text: "..." }
  *   data: { type: "audio", audio_b64: "..." }
- *   event: ui_action\ndata: { type: "ui_action", action: "SHOW_GALLERY", ... }
+ *   event: ui_action\ndata: { type: "ui_action", action: { type: "show_gallery", resource_id: "...", resource: {} } }
  *   data: { type: "done",  full_text: "..." }
  *   data: { type: "error", message: "..." }
  */
 
-import { enqueueBase64Audio, enqueueAudio, clearAudioQueue, isAudioBusy, onAudioQueueFinished } from '../audio/player.js';
+import { enqueueBase64Audio, clearAudioQueue, beginAudioStream, endAudioStream, onAudioQueueFinished } from '../audio/player.js';
 import { setIsProcessingResponse, registrarActividad } from '../avatar/animator.js';
-import { openGallery, openLeadForm, openPayment } from '../ui/overlays.js';
+import { crearHandlerAccion } from './actions.js';
 import { getPersona, setPersona } from '../ui/persona.js';
 import { detenerReconocimiento } from '../ui/controls.js';
 
 // ── Configuración ─────────────────────────────────────────────────────────────
-//const BACKEND_URL        = 'http://127.0.0.1:8000';
-const BACKEND_URL        = import.meta.env.VITE_API_URL || "http://localhost:8000";
+import { apiUrl } from './config.js';
 const CONNECT_TIMEOUT_MS = 20000;
 const MAX_REINTENTOS     = 2;
 
@@ -52,16 +51,6 @@ export const SESSION_ID = (() => {
 // ── Referencias DOM ───────────────────────────────────────────────────────────
 const getStatusBadge = () => document.getElementById('status-badge');
 const getSubtitles   = () => document.getElementById('subtitles');
-
-/**
- * Convierte una cadena base64 en una Blob URL de audio MP3.
- */
-function b64ToBlobUrl(b64) {
-  const binaryStr = atob(b64);
-  const bytes = new Uint8Array(binaryStr.length);
-  for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
-  return URL.createObjectURL(new Blob([bytes], { type: 'audio/mpeg' }));
-}
 
 /**
  * Parser de SSE v4.0: soporta eventos con nombre (event: ui_action) además
@@ -121,54 +110,15 @@ async function _parseSseStream(body, onEvent) {
   }
 }
 
-/** Acción visual diferida hasta el fin del habla del avatar */
-let accionVisualPendiente = null;
-
 /**
  * Ejecuta físicamente la acción visual en los overlays.
  * @param {object} event - Payload del SSE ui_action
  */
-function ejecutarAccionVisual(event) {
-  if (!event) return;
-  console.log("[UI_ACTION] Ejecutando accion visual:", event.action, event);
-  switch (event.action) {
-    case 'SHOW_GALLERY':
-      openGallery(event);
-      break;
-    case 'OPEN_LEAD_FORM':
-      openLeadForm(event);
-      break;
-    case 'SHOW_PAYMENT':
-      openPayment(event);
-      break;
-    default:
-      console.warn('[api/client] Acción UI desconocida:', event.action);
-  }
-}
-
-/**
- * Despacha un evento ui_action al overlay correspondiente.
- * Si el avatar está hablando o reproduciendo la cola de audio,
- * pospone la apertura del modal hasta que el habla concluya por completo.
- * @param {object} event - Payload del SSE ui_action
- */
 function _despacharUiAction(event) {
-  console.log("[UI_ACTION] Recibido evento:", event.action, event);
-  const esModal = ['SHOW_GALLERY', 'OPEN_LEAD_FORM', 'SHOW_PAYMENT'].includes(event.action);
-
-  if (esModal && isAudioBusy()) {
-    console.log("[UI_ACTION] Audio ocupado: posponiendo accion visual hasta fin de voz:", event.action);
-    accionVisualPendiente = event;
-    onAudioQueueFinished(() => {
-      if (accionVisualPendiente) {
-        console.log("[UI_ACTION] Fin de audio detectado: desplegando accion visual pospuesta:", accionVisualPendiente.action);
-        ejecutarAccionVisual(accionVisualPendiente);
-        accionVisualPendiente = null;
-      }
-    });
-  } else {
-    ejecutarAccionVisual(event);
-  }
+  const handler = crearHandlerAccion(event?.action);
+  if (!handler) return;
+  // Se conserva el hold hasta done y la finalización real de todo el audio.
+  onAudioQueueFinished(handler);
 }
 
 /**
@@ -179,7 +129,9 @@ function _despacharUiAction(event) {
  * @param {number} [intentos=0] - Contador interno de reintentos.
  */
 export async function consultarAsistente(pregunta, intentos = 0) {
-  if (intentos === 0) clearAudioQueue();
+  clearAudioQueue();
+  beginAudioStream();
+  let responseDone = false;
   setIsProcessingResponse(true);
   registrarActividad();
 
@@ -187,7 +139,7 @@ export async function consultarAsistente(pregunta, intentos = 0) {
   const timeoutId  = setTimeout(() => controller.abort(), CONNECT_TIMEOUT_MS);
 
   try {
-    const res = await fetch(`${BACKEND_URL}/chat/stream`, {
+    const res = await fetch(apiUrl('/chat/stream'), {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({
@@ -207,6 +159,10 @@ export async function consultarAsistente(pregunta, intentos = 0) {
     let micDetenido  = false;
 
     await _parseSseStream(res.body, (event) => {
+      if (responseDone) {
+        console.warn('[api/client] Evento posterior al cierre; ignorado.');
+        return;
+      }
       // Liberar el micrófono de inmediato en el primer token/evento para que iOS WebKit habilite los altavoces
       if (!micDetenido) {
         detenerReconocimiento();
@@ -242,6 +198,10 @@ export async function consultarAsistente(pregunta, intentos = 0) {
         }
 
         case 'mode_switch':
+          if (!['info', 'sales'].includes(event.mode)) {
+            console.warn('[api/client] Persona desconocida; ignorada.');
+            break;
+          }
           // ── Escalación automática Consulta → Vendedora (intención de compra) ─
           console.log('[api/client] mode_switch recibido:', event.mode);
           setPersona(event.mode, 'auto');
@@ -253,29 +213,26 @@ export async function consultarAsistente(pregunta, intentos = 0) {
           _despacharUiAction(event);
           break;
 
+        case 'notice':
+          // El aviso hablado ya llegó como texto/audio. No abre ningún modal.
+          console.warn('[api/client] Aviso comercial:', event.code);
+          break;
+
         case 'done':
-          if (pendingText) {
-            subtitleText += (subtitleText ? ' ' : '') + pendingText;
-            getSubtitles().textContent = subtitleText;
-            pendingText = '';
-          }
+          responseDone = true;
           setIsProcessingResponse(false);
           registrarActividad();
-          console.log('[api/client] Stream completo.');
-          // Si el audio ya terminó o no llegó a reproducirse por restricción móvil,
-          // retirar el estado "Consultando..." para no congelar la UI
-          if (!isAudioBusy()) {
+          onAudioQueueFinished(() => {
+            getSubtitles().textContent = event.full_text || subtitleText || pendingText;
             getStatusBadge().textContent = 'Toca el micrófono para hablar';
-            getStatusBadge().className   = '';
-          } else {
-            onAudioQueueFinished(() => {
-              getStatusBadge().textContent = 'Toca el micrófono para hablar';
-              getStatusBadge().className   = '';
-            });
-          }
+            getStatusBadge().className = '';
+          });
+          endAudioStream();
           break;
 
         case 'error':
+          responseDone = true;
+          clearAudioQueue();
           setIsProcessingResponse(false);
           registrarActividad();
           getSubtitles().textContent   = 'Ocurrió un error. Por favor, intenta de nuevo.';
@@ -288,9 +245,11 @@ export async function consultarAsistente(pregunta, intentos = 0) {
           console.warn('[api/client] Evento SSE desconocido:', event.type);
       }
     });
+    if (!responseDone) throw new Error('Stream incompleto');
 
   } catch (err) {
     clearTimeout(timeoutId);
+    clearAudioQueue();
 
     if (intentos < MAX_REINTENTOS) {
       getStatusBadge().textContent = `Reintentando... (${intentos + 1}/${MAX_REINTENTOS})`;

@@ -13,7 +13,7 @@ VOZ_SELECCIONADA = "es-PE-CamilaNeural"
 
 async def generar():
     # rate="+10%" le da un ritmo comercial ágil y dinámico
-    comunicador = edge_tts.Communicate(texto, VOZ_SELECCIONADA, rate="-8%")
+    comunicador = edge_tts.Communicate(texto, VOZ_SELECCIONADA, rate="-10%")
     await comunicador.save(archivo_salida)
 
 if __name__ == "__main__":
