@@ -4,60 +4,55 @@ tipo: "curso_corto"
 categoria: "03_cursos_cortos"
 titulo: "Curso Profesional de Panadería y Pastelería"
 tags: ["panaderia", "pasteleria", "reposteria", "fondant", "buttercream", "curso_corto", "sabados", "certificado", "emprendimiento", "gastronomia"]
-inicio_clases: "2026-11-15"
-duracion: "3 meses"
-modalidad: ["presencial"]
 ---
 
-# Curso Profesional: Panadería y Pastelería
+# Curso Profesional de Panadería y Pastelería
 
-## Ficha Técnica
+## Descripción
 
-- **Certificación otorgada:** Certificación a nombre del Instituto Tuinen Star al culminar y aprobar satisfactoriamente el curso.
-- **Nivel:** Curso profesional corto. Al culminar se obtiene **certificación institucional**, NO un Título Profesional Técnico.
-- **Duración:** 3 meses
-- **Inicio oficial:** 15 de noviembre
-- **Público objetivo:** Emprendedores que buscan iniciar su propio negocio gastronómico y personas interesadas en aprender o perfeccionar técnicas de panadería y pastelería.
+Curso profesional corto de formación práctica en panadería, pastelería y técnicas de decoración.
 
-## Modalidad, Horarios y Sede
+## Duración
 
-- **Modalidad:** 100% presencial y práctica. No disponible en modalidad virtual ni a distancia.
-- **Frecuencia:** Exclusivamente los días **sábados**
+La duración declarada es de 3 meses. El calendario de cada edición se confirma con admisión.
 
-| Turno | Horario |
-|---|---|
-| Mañana | Sábados de 8:00 a.m. a 12:00 p.m. |
-| Tarde | Sábados de 2:00 p.m. a 6:00 p.m. |
+## Modalidades
 
-**Lugar de clases:** Sede Principal de San Sebastián (Calle Bellavista N.º 130 y 140, Cusco).
+- **Presencial:** formación práctica en la sede académica del instituto.
 
-## Información comercial vigente
+No se ofrece en modalidad virtual ni a distancia. Puede tener clases o actividades los sábados. Los turnos, horarios y fechas de inicio se confirman para esta edición del curso.
 
-La única fuente de tarifas, campañas y promociones de este programa es [panaderia_pasteleria.pricing.json](panaderia_pasteleria.pricing.json).
-Lía consulta PricingService directamente; los importes no dependen del índice vectorial.
-No copies precios a este Markdown. Un estado `pending` no significa gratuito.
+## Perfil del estudiante
 
-**Cupos limitados por turno.** Se asignan por orden de matrícula.
+Está dirigido a emprendedores que buscan iniciar un negocio gastronómico y a personas interesadas en aprender o perfeccionar técnicas de panadería y pastelería.
 
-
-## Contenido Temático
-
-Durante las sesiones prácticas los alumnos aprenden:
+## Qué aprenderás
 
 ### Panadería
-- Elaboración de panes internacionales
-- Elaboración de panes regionales (panes típicos del Cusco y Perú)
+
+- Elaboración de panes internacionales.
+- Elaboración de panes regionales del Cusco y Perú.
 
 ### Pastelería
-- Pastelería básica
-- Pastelería avanzada
 
-### Técnicas de Decoración
-- Decoración con masa fondant
-- Decoración con buttercream
-- Decoración con chantilly
-- Elaboración y aplicaciones de crema pastelera
+- Pastelería básica.
+- Pastelería avanzada.
 
-## Campo Laboral
+### Técnicas de decoración
 
-El egresado puede emprender su propio negocio de panadería o pastelería, trabajar en panaderías, pastelerías, cafeterías, hoteles, restaurantes o empresas de catering.
+- Decoración con masa fondant.
+- Decoración con buttercream.
+- Decoración con chantilly.
+- Elaboración y aplicaciones de crema pastelera.
+
+## Campo laboral
+
+El egresado puede emprender un negocio propio o trabajar en panaderías, pastelerías, cafeterías, hoteles, restaurantes o empresas de catering.
+
+## Información adicional
+
+Al culminar y aprobar satisfactoriamente el curso se obtiene una certificación institucional a nombre del Instituto Tuinen Star; no equivale a un Título Profesional Técnico.
+
+Los cupos por turno se asignan por orden de matrícula; la disponibilidad actual debe confirmarse. Los requisitos documentales de este curso deben confirmarse con admisión.
+
+La ubicación y contacto se encuentran en la [información institucional](../01_institucional/general.md). Las condiciones comerciales vigentes se consultan según lo indicado en [pagos](../01_institucional/admision_y_pagos.md).

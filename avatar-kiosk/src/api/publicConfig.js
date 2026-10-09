@@ -11,7 +11,18 @@ export function selectedAvatarUrl(config, resolve = apiUrl) {
 }
 
 export async function fetchAvatarUrl(fetcher = fetch, resolve = apiUrl) {
-  const response = await fetcher(resolve('/api/config'), { cache: 'no-store' });
+  const response = await fetcher(resolve('/api/config'), { cache: 'no-cache' });
   if (!response.ok) throw new Error('No se pudo obtener la configuración del avatar.');
-  return selectedAvatarUrl(await response.json(), resolve);
+  const url = selectedAvatarUrl(await response.json(), resolve);
+  const revision = response.headers?.get('ETag')?.replaceAll('"', '');
+  return /^[a-f0-9]{64}$/.test(revision || '') ? `${url}?v=${revision}` : url;
+}
+
+let configurationPromise=null;
+export function fetchPublicConfig() {
+  if(!configurationPromise) configurationPromise=fetch(apiUrl('/api/config'),{cache:'no-cache',signal:AbortSignal.timeout(20000)})
+    .then(async response=>{if(!response.ok) throw new Error('Configuración no disponible');
+      const config=await response.json();window.__liaPublicConfig=config;return config;})
+    .catch(error=>{configurationPromise=null;throw error;});
+  return configurationPromise;
 }

@@ -18,13 +18,19 @@
  *                 Modo atracción deshabilitado (política de audio en móvil).
  */
 
+import { apiUrl } from './api/config.js';
+import { ensureSession } from './api/session.js';
+import { applyBranding } from './ui/branding.js';
+import { fetchPublicConfig } from './api/publicConfig.js';
+import { setInitialized, setAssistantState } from './ui/state.js';
 import * as THREE from 'three';
-import { loadAvatar } from './avatar/loader.js';
-import { startAnimation } from './avatar/animator.js';
-import { initControls } from './ui/controls.js';
-import { initOverlays } from './ui/overlays.js';
+import { loadAvatar, disposeAvatar } from './avatar/loader.js';
+import { startAnimation, disposeAnimation } from './avatar/animator.js';
+import { initControls, disposeControls } from './ui/controls.js';
+import { initOverlays } from './ui/lazyOverlays.js';
 import { initPersona } from './ui/persona.js';
-import { APP_MODE } from './api/client.js';
+import { disposeAudio } from './audio/player.js';
+import { cancelarInteraccion, APP_MODE } from './api/client.js';
 
 // ── 1. Escena ─────────────────────────────────────────────────────────────────
 const scene = new THREE.Scene();
@@ -40,12 +46,15 @@ const camera = new THREE.PerspectiveCamera(
 camera.position.set(0.0, 1.30, 0.95);
 
 // ── 3. Renderer ───────────────────────────────────────────────────────────────
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+let renderer=null;
+try { renderer=new THREE.WebGLRenderer({antialias:true,alpha:true}); } catch (_) { console.warn('[main] Render no disponible.'); }
+if(renderer) {
 renderer.setClearColor(0x000000, 0);   // fondo transparente → se ve #lia-aura detrás
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.domElement.id = 'canvas3d';
 document.body.appendChild(renderer.domElement);
+}
 
 // ── 4. Iluminación ────────────────────────────────────────────────────────────
 const directionalLight = new THREE.DirectionalLight(0xffffff, 1.4);
@@ -57,14 +66,49 @@ scene.add(new THREE.AmbientLight(0xffffff, 0.7));
 console.log(`[main] Iniciando en modo: ${APP_MODE}`);
 
 initPersona(APP_MODE);           // Aura lumínica + switch Consulta/Vendedora
-initOverlays(APP_MODE);          // Monta overlays (no-op en modo kiosk)
-loadAvatar(scene);               // Carga el VRM de forma asíncrona
-initControls(APP_MODE);          // Inicializa micrófono y UI (pasa el modo)
-startAnimation(renderer, scene, camera, APP_MODE); // Arranca bucle de render
+initOverlays(APP_MODE);          // Prepara el modo; los modales se cargan cuando se solicitan
+async function initializeConversation() {
+  setInitialized(false);
+  const retry=document.getElementById('retry-start');retry.hidden=true;
+  try {
+    const [config]=await Promise.all([fetchPublicConfig(),ensureSession()]);
+    applyBranding(config);
+    initControls(APP_MODE);setInitialized(true);
+  } catch (_) {
+    console.warn('[main] Arranque de conversación no completado.');
+    setAssistantState('error');retry.hidden=false;
+  }
+}
+document.getElementById('retry-start').addEventListener('click',()=>void initializeConversation());
+initControls(APP_MODE); // Offline and unsupported-voice feedback works even during bootstrap.
+void initializeConversation();
+if(renderer) {
+  void loadAvatar(scene).then(ok=>{if(!ok) document.getElementById('capability-notice').textContent='El avatar no está disponible. Puedes continuar conversando.';});
+  startAnimation(renderer,scene,camera,APP_MODE);
+} else document.getElementById('capability-notice').textContent='El avatar no está disponible. Puedes continuar conversando.';
+
+// Captions stay above controls as text/error/stop controls change height.
+const controlsBox=document.getElementById('ui-container');
+function positionCaptions() {
+  const subtitles=document.getElementById('subtitles');
+  subtitles.style.bottom=Math.max(105,window.innerHeight-controlsBox.getBoundingClientRect().top+16)+'px';
+}
+const controlsObserver=typeof ResizeObserver==='function'?new ResizeObserver(positionCaptions):null;
+controlsObserver?.observe(controlsBox);positionCaptions();
 
 // ── 6. Responsive ─────────────────────────────────────────────────────────────
-window.addEventListener('resize', () => {
+function resizeScene() {
+  positionCaptions();
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer?.setSize(window.innerWidth, window.innerHeight);
+}
+window.addEventListener('resize', resizeScene);
+window.addEventListener('pagehide', (event) => {
+  void cancelarInteraccion(); // Navigation invalidates the turn, including BFCache.
+  if (event.persisted) return; // Preserve the scene, not a pending conversation.
+  controlsObserver?.disconnect();
+  disposeControls(); disposeAnimation();
+  disposeAvatar(); void disposeAudio(); renderer?.dispose();
+  window.removeEventListener('resize', resizeScene);
 });

@@ -7,13 +7,15 @@ Esto elimina la race condition del prototipo donde dos peticiones concurrentes
 podían corromper o cruzar el audio de distintos usuarios.
 """
 import io
+import asyncio
 
 import edge_tts
 
 from config import settings
+from security.config import SecuritySettings
 
 
-async def generar_audio_bytes(texto: str) -> bytes:
+async def generar_audio_bytes(texto: str, *, configuration=None, voice=None) -> bytes:
     """
     Sintetiza el texto con Edge-TTS y retorna los bytes de audio MP3 en memoria.
 
@@ -30,16 +32,29 @@ async def generar_audio_bytes(texto: str) -> bytes:
         RuntimeError: Si Edge-TTS no devuelve datos de audio.
     """
     buffer = io.BytesIO()
-    comunicador = edge_tts.Communicate(texto, settings.tts_voice, rate=settings.tts_rate)
+    limits = getattr(configuration or settings, 'security', SecuritySettings())
+    from domain.voice import VoiceConfig
+    from types import SimpleNamespace
+    selected=VoiceConfig.model_validate(voice) if voice is not None else SimpleNamespace(voice_id=(configuration or settings).tts_voice,rate=(configuration or settings).tts_rate,pitch='+0Hz',volume='+0%',enabled=True)
+    if not selected.enabled:raise RuntimeError('Speech disabled')
+    comunicador = edge_tts.Communicate(texto, selected.voice_id, rate=selected.rate, pitch=selected.pitch,volume=selected.volume,
+        connect_timeout=10, receive_timeout=int(limits.tts_timeout))
 
-    async for chunk in comunicador.stream():
-        if chunk["type"] == "audio":
-            buffer.write(chunk["data"])
+    stream = comunicador.stream()
+    try:
+        async with asyncio.timeout(limits.tts_timeout):
+            async for chunk in stream:
+                if chunk["type"] == "audio":
+                    if buffer.tell() + len(chunk['data']) > 5 * 1024 * 1024:
+                        raise RuntimeError('Audio demasiado grande')
+                    buffer.write(chunk["data"])
+    finally:
+        await stream.aclose()
 
     audio_bytes = buffer.getvalue()
     if not audio_bytes:
         raise RuntimeError(
-            f"Edge-TTS no generó audio para el texto: '{texto[:60]}...'"
+            "Edge-TTS no generó audio"
         )
 
     return audio_bytes

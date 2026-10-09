@@ -1,0 +1,82 @@
+{
+  "passed": true,
+  "steps": [
+    {
+      "name": "create_venv",
+      "exit_code": 0,
+      "duration_ms": 7207
+    },
+    {
+      "name": "python_dependencies",
+      "exit_code": 0,
+      "duration_ms": 108064
+    },
+    {
+      "name": "dependency_integrity",
+      "exit_code": 0,
+      "duration_ms": 2197
+    },
+    {
+      "name": "npm_ci",
+      "exit_code": 0,
+      "duration_ms": 4278
+    },
+    {
+      "name": "commercial_migration",
+      "exit_code": 0,
+      "duration_ms": 840
+    },
+    {
+      "name": "migration_idempotent",
+      "exit_code": 0,
+      "duration_ms": 419
+    },
+    {
+      "name": "validate_knowledge",
+      "exit_code": 0,
+      "duration_ms": 313
+    },
+    {
+      "name": "build_real_index",
+      "exit_code": 0,
+      "duration_ms": 15254
+    },
+    {
+      "name": "verify_index",
+      "exit_code": 0,
+      "duration_ms": 1760
+    },
+    {
+      "name": "evaluate_index",
+      "exit_code": 0,
+      "duration_ms": 3651
+    },
+    {
+      "name": "frontend_build",
+      "exit_code": 0,
+      "duration_ms": 1625
+    }
+  ],
+  "locked_packages": 107,
+  "readiness": {
+    "status": "ready",
+    "checks": {
+      "database": true,
+      "configuration": true,
+      "avatar": true,
+      "pricing": true,
+      "runtime": true,
+      "knowledge": true
+    },
+    "knowledge": {
+      "status": "ready"
+    },
+    "providers": {
+      "groq": "not_probed",
+      "tts": "not_probed"
+    },
+    "prewarm": {
+      "status": "ready"
+    }
+  }
+}

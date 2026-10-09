@@ -1,0 +1,24 @@
+{
+  "passed": true,
+  "backend_tests": 238,
+  "frontend_tests": 58,
+  "admin_e2e_checks": 48,
+  "public_e2e_checks": 18,
+  "voice_e2e_checks": 5,
+  "clean_install_steps": 12,
+  "production_checks": 9,
+  "rag_cases": 12,
+  "syntax": {
+    "passed": true,
+    "python_files": 125,
+    "javascript_files": 34
+  },
+  "secret_scan": {
+    "passed": true,
+    "files_checked": 255,
+    "findings": []
+  },
+  "diff_check": "passed",
+  "build": "passed",
+  "backup": "snapshot, hashes, SQLite integrity/FK, users and audit tested on temporary DB"
+}

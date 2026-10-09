@@ -1,0 +1,47 @@
+{
+  "phase": "9D",
+  "passed": true,
+  "backend_tests": 249,
+  "frontend_tests": 63,
+  "admin_e2e_checks": 56,
+  "commercial_e2e_cases": 11,
+  "concurrency_e2e_cases": 2,
+  "public_e2e_checks": 18,
+  "public_e2e_rounds": 3,
+  "clean_install_steps": 13,
+  "production_checks": 9,
+  "rag_evaluation_cases": 12,
+  "rag_status": "ready",
+  "backup": {
+    "passed": true,
+    "counts": {
+      "leads": 1,
+      "lead_tracking": 1,
+      "lead_activity": 9,
+      "lead_tasks": 1,
+      "vouchers": 1
+    },
+    "integrity": "ok",
+    "read_only": true
+  },
+  "syntax": {
+    "passed": true,
+    "checked": {
+      "python": 133,
+      "javascript": 36
+    },
+    "errors": []
+  },
+  "secret_scan": {
+    "passed": true,
+    "files_checked": 276,
+    "findings": []
+  },
+  "diff_check": {
+    "passed": true,
+    "issues": []
+  },
+  "production_build": "passed",
+  "remaining_warning": "Three.js chunk exceeds 500 kB; retained from previous phases",
+  "next_phase_started": false
+}

@@ -1,0 +1,41 @@
+{
+  "passed": true,
+  "checks": [
+    "session_bootstrap_text_ready",
+    "approved_avatar_loaded",
+    "favicon_available",
+    "text_audio_response",
+    "cancel_then_ready",
+    "tts_failure_text_continues",
+    "llm_failure_recovers",
+    "kiosk_repeated_conversation",
+    "browser_freeze_resume",
+    "offline_online_controls_recover"
+  ],
+  "rounds": 50,
+  "mode": "kiosk",
+  "heap_samples": [
+    {
+      "round": 0,
+      "bytes": 73490636
+    },
+    {
+      "round": 10,
+      "bytes": 74990484
+    },
+    {
+      "round": 20,
+      "bytes": 75963364
+    },
+    {
+      "round": 30,
+      "bytes": 75837404
+    },
+    {
+      "round": 40,
+      "bytes": 37997109
+    }
+  ],
+  "native_voice_available": true,
+  "elapsed_seconds": 42.718
+}

@@ -4,62 +4,52 @@ tipo: "carrera_tecnica"
 categoria: "02_carreras"
 titulo: "Contabilidad"
 tags: ["contabilidad", "contable", "finanzas", "tributaria", "auditoria", "costos", "horarios", "presencial", "virtual"]
-inicio_clases: "2026-10-05"
-duracion: "2 años y medio"
-ciclos: 6
-modalidad: ["presencial", "virtual"]
 ---
 
-# Carrera Profesional Técnica: Contabilidad
+# Contabilidad
 
-## Ficha Técnica
+## Descripción
 
-- **Título otorgado:** Título Profesional Técnico en Contabilidad a Nombre de la Nación
-- **Duración:** 2 años y medio (6 ciclos académicos de 17 semanas / 4 meses y medio cada uno)
-- **Inicio de clases:** 5 de octubre de 2026
-- **Perfil:** Gestión de información financiera, contable, tributaria y auditoría para la toma de decisiones y control financiero en entidades públicas, privadas o de manera independiente.
+La carrera forma profesionales para gestionar información financiera, contable y tributaria, realizar tareas de auditoría y contribuir a la toma de decisiones y al control financiero de entidades públicas, privadas o independientes.
 
-## Modalidades y Horarios
+## Duración
 
-### Modalidad Presencial
+La duración declarada es de 2 años y medio, organizada en 6 ciclos académicos. El calendario de cada periodo se confirma con admisión.
 
-| Turno | Días | Horario |
-|---|---|---|
-| Mañana | Lunes a viernes | 7:00 a.m. a 11:30 a.m. |
-| Tarde | Lunes a viernes | (consultar disponibilidad por ciclo) |
+## Modalidades
 
-**Lugar:** Sede Principal de San Sebastián (Calle Bellavista N.º 130 y 140, Cusco).
+- **Presencial:** formación en la sede académica del instituto.
+- **Virtual:** clases en vivo y gestión académica mediante las plataformas descritas en la [información institucional](../01_institucional/general.md).
 
-### Modalidad Virtual
+Los turnos, horarios y fechas de inicio se confirman para este programa y periodo. La disponibilidad de un turno no se deduce de la oferta de otras carreras.
 
-| Turno | Días | Horario |
-|---|---|---|
-| Noche | Lunes a viernes | 6:30 p.m. a 9:30 p.m. |
+## Qué aprenderás
 
-Clases en vivo por Google Meet (grabadas para repaso). Gestión académica por plataforma Q10.
+- Uso de software contable especializado aplicado al contexto empresarial peruano.
+- Resolución de casos prácticos reales.
+- Simulación de operaciones financieras.
 
-## Información comercial vigente
+La ficha académica contempla certificaciones progresivas durante el avance de la carrera.
 
-La única fuente de tarifas, campañas y promociones de este programa es [contabilidad.pricing.json](contabilidad.pricing.json).
-Lía consulta PricingService directamente; los importes no dependen del índice vectorial.
-No copies precios a este Markdown. Un estado `pending` no significa gratuito.
-
-
-## Herramientas y Formación Especializada
-
-- **Software contable especializado** (aplicado al contexto empresarial peruano)
-- **Certificaciones progresivas** durante el avance de la carrera
-- Metodología: casos prácticos reales y simulaciones de operaciones financieras
-
-## Campo Laboral
+## Campo laboral
 
 El egresado puede desempeñarse en:
 
-- Bancos, cajas municipales, cajas rurales y cooperativas de ahorro y crédito
-- Empresas financieras y compañías de seguros
-- Estudios contables y empresas consultoras
-- Áreas contables, financieras, de tesorería y tributarias
-- Control de ingresos, cobranzas, presupuestos y costos
-- Auditoría y control interno
-- Empresas de sectores industriales, comerciales o de servicios
-- Asesoría contable independiente o negocio propio
+- Bancos, cajas municipales, cajas rurales y cooperativas de ahorro y crédito.
+- Empresas financieras y compañías de seguros.
+- Estudios contables y empresas consultoras.
+- Áreas contables, financieras, de tesorería y tributarias.
+- Control de ingresos, cobranzas, presupuestos y costos.
+- Auditoría y control interno.
+- Empresas industriales, comerciales o de servicios.
+- Asesoría contable independiente o negocio propio.
+
+## Requisitos
+
+Los requisitos documentales generales se encuentran en [admisión y requisitos](../01_institucional/admision_y_pagos.md).
+
+## Información adicional
+
+El título otorgado es el Título Profesional Técnico en Contabilidad a Nombre de la Nación, sujeto al cumplimiento de los requisitos académicos y administrativos.
+
+La ubicación, contacto y beneficios comunes se encuentran en la [información institucional](../01_institucional/general.md). Las condiciones comerciales vigentes se consultan según lo indicado en [pagos](../01_institucional/admision_y_pagos.md).

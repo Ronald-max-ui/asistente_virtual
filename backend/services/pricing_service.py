@@ -6,112 +6,15 @@ from datetime import date, datetime, timezone, timedelta
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from threading import RLock
-from typing import Literal
-from pydantic import BaseModel, ConfigDict, Field, StrictStr, model_validator, field_validator
 from services.consent_service import normalizar
 
-CONCEPTOS = ("inscripcion", "matricula", "mensualidad", "mensualidad_contado", "pago_contado", "ciclo_completo", "descuento")
+from domain.pricing import CONCEPTOS, StrictModel, Promotion, PriceEntry, ProgramCatalog
+
 _LABELS = {"inscripcion":"inscripción", "matricula":"matrícula", "mensualidad":"mensualidad", "mensualidad_contado":"mensualidad al contado", "pago_contado":"pago al contado", "ciclo_completo":"ciclo completo", "descuento":"descuento"}
 _KNOWLEDGE = Path(__file__).resolve().parents[1] / "knowledge"
 
 class CatalogError(ValueError):
     """Configuración inválida: nunca usar un importe antiguo de respaldo."""
-
-class StrictModel(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-class Promotion(StrictModel):
-    id: StrictStr
-    description: StrictStr
-    kind: Literal["percent", "fixed", "informative"]
-    value: Decimal | None = None
-    conditions: StrictStr
-    @model_validator(mode="after")
-    def validate_value(self):
-        if self.kind == "informative" and self.value is not None:
-            raise ValueError("Promoción informativa sin valor calculable")
-        if self.kind != "informative" and (self.value is None or not self.value.is_finite() or self.value < 0):
-            raise ValueError("Valor de promoción inválido")
-        if self.kind == "percent" and self.value > 100:
-            raise ValueError("Porcentaje inválido")
-        return self
-
-class PriceEntry(StrictModel):
-    concept: Literal["inscripcion", "matricula", "mensualidad", "mensualidad_contado", "pago_contado", "ciclo_completo", "descuento"]
-    modality: StrictStr | None
-    shift: StrictStr | None
-    amount: Decimal | None
-    currency: StrictStr = Field(pattern=r"^[A-Z]{3}$")
-    status: Literal["active", "free", "pending", "inactive"]
-    campaign: StrictStr = Field(min_length=1)
-    starts_on: date | None
-    ends_on: date | None
-    promotions: list[Promotion] = Field(default_factory=list)
-    observations: StrictStr = ""
-
-    @field_validator("amount", mode="before")
-    @classmethod
-    def decimal_only(cls, value):
-        if value is None:
-            return None
-        if isinstance(value, bool) or not isinstance(value, (str, int, Decimal)):
-            raise ValueError("Monto debe ser decimal exacto")
-        if isinstance(value, str) and not re.fullmatch(r"\d+(?:\.\d{1,2})?", value):
-            raise ValueError("Formato de monto inválido")
-        return value
-
-    @field_validator("starts_on", "ends_on", mode="before")
-    @classmethod
-    def date_only(cls, value):
-        if value is None:
-            return None
-        if not isinstance(value, str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", value):
-            raise ValueError("Fecha debe ser YYYY-MM-DD")
-        return value
-
-    @model_validator(mode="after")
-    def validate_price(self):
-        if self.amount is not None and (not self.amount.is_finite() or self.amount < 0 or self.amount.as_tuple().exponent < -2):
-            raise ValueError("Monto inválido")
-        if self.status == "active" and (self.amount is None or self.amount <= 0):
-            raise ValueError("active requiere amount positivo")
-        if self.status == "free" and self.amount != Decimal(0):
-            raise ValueError("free requiere amount 0")
-        if self.status == "pending" and self.amount is not None:
-            raise ValueError("pending requiere amount null")
-        if self.starts_on and self.ends_on and self.starts_on > self.ends_on:
-            raise ValueError("Rango de fechas inválido")
-        return self
-
-class ProgramCatalog(StrictModel):
-    schema_version: Literal[1]
-    program: StrictStr = Field(pattern=r"^[a-z][a-z0-9_]*$")
-    program_label: StrictStr = Field(min_length=1)
-    aliases: list[StrictStr]
-    modalities: list[StrictStr]
-    shifts: list[StrictStr] = Field(default_factory=list)
-    prices: list[PriceEntry]
-
-    @model_validator(mode="after")
-    def validate_entries(self):
-        for values in (self.modalities, self.shifts):
-            if len(set(values)) != len(values) or any(not re.fullmatch(r"[a-z][a-z0-9_]*", v) for v in values):
-                raise ValueError("Variantes inválidas")
-        if not self.modalities or not self.prices:
-            raise ValueError("Catálogo incompleto")
-        for entry in self.prices:
-            if entry.modality is not None and entry.modality not in self.modalities:
-                raise ValueError("Modalidad no registrada")
-            if entry.shift is not None and entry.shift not in self.shifts:
-                raise ValueError("Turno no registrado")
-        enabled = [p for p in self.prices if p.status != "inactive"]
-        for index, first in enumerate(enabled):
-            for second in enabled[index+1:]:
-                same_scope = first.concept == second.concept and (first.modality is None or second.modality is None or first.modality == second.modality) and (first.shift is None or second.shift is None or first.shift == second.shift)
-                overlap = max(first.starts_on or date.min, second.starts_on or date.min) <= min(first.ends_on or date.max, second.ends_on or date.max)
-                if same_scope and overlap:
-                    raise ValueError("Campañas superpuestas para una misma tarifa")
-        return self
 
 
 def _unique_object(pairs):
@@ -210,8 +113,10 @@ class PricingService:
     def _entry(record):
         return PriceEntry.model_validate({key: record[key] for key in PriceEntry.model_fields})
 
-    def _resolve_database(self, program, concept, modality, shift):
+    def _resolve_database(self, program, concept, modality, shift, *, base_only=False):
         snapshot = self._database_snapshot()
+        if base_only:
+            snapshot['prices'] = [p for p in snapshot['prices'] if not p['campaign_id']]
         catalogs = self._database_catalogs(snapshot)
         name = normalizar(program)
         program = next((c.program for c in catalogs.values() if name in
@@ -263,7 +168,11 @@ class PricingService:
         price = next(iter(selected.values()))
         entry = self._entry(price)
         return {**base, **entry.model_dump(mode='json'), 'amount': _number(entry.amount),
-                'modality': modality or entry.modality, 'shift': shift or entry.shift, 'reason': None}
+                'modality': modality or entry.modality, 'shift': shift or entry.shift, 'reason': None,
+                'campaign_id': price['campaign_id'], 'price_id': price['id']}
+
+    def resolve_base(self, program, concept, modality=None, shift=None):
+        return self._resolve_database(program, concept, modality, shift, base_only=True)
 
     def normalize_program(self, value: str) -> str:
         name = normalizar(value)
@@ -383,10 +292,11 @@ def variantes_en_contexto(catalog, question, history=None):
         values.append(found[0] if len(found) == 1 else None)
     return tuple(values)
 
-def inferir_solicitud_pago(pregunta, historial=None, params=None):
-    program = pricing_service.program_from_context(pregunta, historial)
+def inferir_solicitud_pago(pregunta, historial=None, params=None, *, service=None):
+    service = service or pricing_service
+    program = service.program_from_context(pregunta, historial)
     if not program and params:
-        try: program = normalizar_programa(params[0])
+        try: program = service.normalize_program(params[0])
         except ValueError: pass
     concepts = conceptos_en_texto(pregunta)
     if not concepts:
@@ -394,7 +304,7 @@ def inferir_solicitud_pago(pregunta, historial=None, params=None):
         concepts = conceptos_en_texto(previous)
     request = {"program": program, "concept": concepts[0] if len(concepts) == 1 else "matricula"}
     if program:
-        request["modality"], request["shift"] = variantes_en_contexto(pricing_service.catalogs()[program], pregunta, historial)
+        request["modality"], request["shift"] = variantes_en_contexto(service.catalogs()[program], pregunta, historial)
     return request
 
 def resolver_pago(pregunta, historial=None, params=None):
@@ -409,7 +319,7 @@ def instrucciones_tarifas():
             "Solicita acciones mediante herramientas sin importes. "
             "Gastronomía, Panadería y Bartender pueden tener actividades o clases los sábados. No ofrezcas sábados para otras carreras ni afirmes exclusividad o fechas no confirmadas.")
 
-def sanear_tarifas_texto(texto, pregunta="", historial=None):
+def sanear_tarifas_texto(texto, pregunta="", historial=None, *, service=None):
     """Reemplaza afirmaciones monetarias del modelo por la consulta actual autorizada."""
     parts = re.split(r"(?<=[!?])\s+|(?<=\.)\s+(?!\d)", texto)
     money = re.compile(r"(?:S/\.?\s*\d+(?:[.,]\d+)*|\$\s*\d+(?:[.,]\d+)*|\b(?:soles|PEN|USD|EUR|euros|gratis|gratuita|gratuito|sin costo|sin pago|por ciento)\b|\d+(?:[.,]\d+)*\s*%)", re.I)
@@ -421,25 +331,33 @@ def sanear_tarifas_texto(texto, pregunta="", historial=None):
             # El programa se obtiene del usuario/historial, jamás de una cifra del modelo.
             concepts = conceptos_en_texto(part)
             context = pregunta + " " + " ".join(_LABELS[c] for c in concepts)
-            part = pricing_service.authoritative_answer(context, historial)
+            part = (service or pricing_service).authoritative_answer(context, historial)
         output.append(part)
     return " ".join(output)
 
 
-def respuesta_comercial(pregunta, historial=None):
+def respuesta_comercial(pregunta, historial=None, *, service=None):
     """Respuesta vigente obligatoria para preguntas comerciales, aunque el LLM omita precios."""
     n = normalizar(pregunta)
     if re.search(r"\b(precio|precios|costo|costos|cuesta|cuestan|tarifa|tarifas|descuento|descuentos|promocion|promociones|gratis|gratuita|gratuito|pagar)\b", n):
-        return pricing_service.authoritative_answer(pregunta, historial)
+        return (service or pricing_service).authoritative_answer(pregunta, historial)
     return ""
 
 
-def aviso_pago_bloqueado(price):
+def aviso_pago_bloqueado(price, *, service=None):
+    service = service or pricing_service
     """Política comercial compartida por acciones y upload; None autoriza el cobro."""
     if price["status"] == "free":
-        return {"code":"price_free", "message":pricing_service.text_for_price(price) + " No corresponde enviar un comprobante de pago."}
+        return {"code":"price_free", "message":service.text_for_price(price) + " No corresponde enviar un comprobante de pago."}
     if price["status"] != "active":
-        return {"code":"tariff_pending", "message":pricing_service.text_for_price(price)}
+        return {"code":"tariff_pending", "message":service.text_for_price(price)}
     if price["concept"] == "descuento" or price["currency"] != "PEN":
         return {"code":"payment_unavailable", "message":"Esta tarifa no admite un cobro por Yape en este flujo."}
     return None
+
+class PricingPolicy:
+    def __init__(self, service): self.service = service
+    def clean(self, text, question='', history=None):
+        return sanear_tarifas_texto(text, question, history, service=self.service)
+    def answer(self, question, history=None):
+        return respuesta_comercial(question, history, service=self.service)

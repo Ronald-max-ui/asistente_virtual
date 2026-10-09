@@ -1,0 +1,32 @@
+{
+  "chunks": [
+    {
+      "name": "index-C9Dq5p2j.js",
+      "bytes": 24587,
+      "gzip9_bytes": 9232,
+      "initial": true
+    },
+    {
+      "name": "overlays-CG_9Fjy4.js",
+      "bytes": 14407,
+      "gzip9_bytes": 4743,
+      "initial": false
+    },
+    {
+      "name": "three-DG_x4P4N.js",
+      "bytes": 610230,
+      "gzip9_bytes": 151352,
+      "initial": true
+    },
+    {
+      "name": "vrm-ETle7MWq.js",
+      "bytes": 138650,
+      "gzip9_bytes": 32642,
+      "initial": true
+    }
+  ],
+  "initial_js_bytes": 773467,
+  "initial_gzip9_bytes": 193226,
+  "total_js_bytes": 787874,
+  "largest_chunk_bytes": 610230
+}

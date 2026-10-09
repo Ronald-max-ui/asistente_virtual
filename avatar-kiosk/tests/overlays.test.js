@@ -21,7 +21,7 @@ function harness() {
   }
   const document = { body: new Element(), head: new Element(),
     createElement: () => new Element(), getElementById: (id) => nodes.get(id) };
-  const context = vm.createContext({ console, document, setTimeout: () => 1, clearTimeout() {},
+  const context = vm.createContext({bindDialog:()=>()=>{},sessionStorage:{getItem:()=>null,setItem(){}}, console, document, setTimeout: () => 1, clearTimeout() {},
     SESSION_ID: 'test-session', apiUrl: (p) => 'https://api.example' + p,
     resolverMediaUrl: (p) => p?.startsWith('/static/media/') ? 'https://api.example' + p : '',
     window: {} });

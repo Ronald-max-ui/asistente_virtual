@@ -83,7 +83,7 @@ test('attraction: kiosk and web reach attraction without an undefined variable',
   for (const enabled of [false, true]) {
     const played = [];
     const context = vm.createContext({ console, Date: { now: () => 40000 },
-      setTimeout() {}, requestAnimationFrame() {},
+      setTimeout() {}, requestAnimationFrame() {}, createRenderLoop: () => () => {},
       isCurrentlySpeaking: () => false, getCurrentVrm: () => null,
       THREE: { Vector3: class { set() {} }, Clock: class { getDelta() { return 0; } getElapsedTime() { return 0; } } },
       playAudio: (url) => played.push(url) });

@@ -1,0 +1,37 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "case": "session_mode_valid",
+      "passed": true
+    },
+    {
+      "case": "insecure_cookie",
+      "passed": true
+    },
+    {
+      "case": "http_origin",
+      "passed": true
+    },
+    {
+      "case": "localhost_origin",
+      "passed": true
+    },
+    {
+      "case": "legacy_missing_token",
+      "passed": true
+    },
+    {
+      "case": "legacy_placeholder",
+      "passed": true
+    },
+    {
+      "case": "weak_argon",
+      "passed": true
+    },
+    {
+      "case": "eternal_session",
+      "passed": true
+    }
+  ]
+}

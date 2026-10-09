@@ -1,5 +1,5 @@
 /** Contrato de transporte: handlers locales conocidos, sin políticas comerciales. */
-import { openGallery, openLeadForm, openPayment } from '../ui/overlays.js';
+import { openGallery, openLeadForm, openPayment } from '../ui/lazyOverlays.js';
 
 const record = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 const string = (value) => typeof value === 'string';
@@ -30,7 +30,7 @@ const handlers = new Map([
   }],
 ]);
 
-export function crearHandlerAccion(action) {
+export function crearHandlerAccion(action, isCurrent = () => true) {
   const entry = record(action) && handlers.get(action.type);
   if (!entry || !shape(action, entry.fields)) {
     console.warn('[api/actions] Acción desconocida o inválida; ignorada.');
@@ -39,5 +39,5 @@ export function crearHandlerAccion(action) {
   // Capturar datos validados para el callback que ejecuta tras finalizar audio.
   const payload = Object.freeze({ ...action,
     ...(action.resource ? { resource: Object.freeze({ ...action.resource }) } : {}) });
-  return () => entry.run(payload);
+  return () => { if (isCurrent()) return entry.run(payload, isCurrent); };
 }

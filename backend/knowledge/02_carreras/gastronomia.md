@@ -4,70 +4,55 @@ tipo: "carrera_tecnica"
 categoria: "02_carreras"
 titulo: "Gastronomía"
 tags: ["gastronomia", "culinaria", "cocina", "presencial", "costos", "horarios", "turno_manana", "turno_sabado", "uniforme", "insumos"]
-inicio_clases: "2026-10-05"
-duracion: "2 años y medio"
-ciclos: 6
-modalidad: ["presencial"]
 ---
 
-# Carrera Profesional Técnica: Gastronomía
+# Gastronomía
 
-## Ficha Técnica
+## Descripción
 
-- **Título otorgado:** Título Profesional Técnico en Gastronomía a Nombre de la Nación
-- **Duración:** 2 años y medio (6 ciclos académicos de 17 semanas / 4 meses y medio cada uno)
-- **Inicio de clases:** 5 de octubre de 2026
-- **Perfil:** Formación práctica para desarrollar técnicas culinarias, gestión gastronómica y operación en cocina en ambientes especializados.
+La carrera ofrece formación práctica en técnicas culinarias, gestión gastronómica y operación de cocina en ambientes especializados.
 
-## Modalidad y Horarios
+## Duración
 
-> **IMPORTANTE:** La carrera de Gastronomía es **100% presencial** en todos sus turnos. No se ofrece en modalidad virtual ni a distancia.
+La duración declarada es de 2 años y medio, organizada en 6 ciclos académicos. El calendario de cada periodo se confirma con admisión.
 
-### Turno Lunes a Viernes (Presencial)
+## Modalidades
 
-| Turno | Días | Horario |
-|---|---|---|
-| Mañana | Lunes a viernes | 7:00 a.m. a 11:30 a.m. |
-| Noche | Lunes a viernes | 6:30 p.m. a 9:30 p.m. |
+- **Presencial:** formación en la sede académica del instituto.
 
-### Turno Sábados (Presencial — Para personas que trabajan entre semana)
+Gastronomía no se ofrece en modalidad virtual ni a distancia.
 
-| Turno | Días | Horario |
-|---|---|---|
-| Sábado | Sábados | 8:00 a.m. a 6:30 p.m. |
+Puede tener clases o actividades los sábados. Los turnos, horarios y fechas de inicio se confirman para Gastronomía y el periodo vigente; la posibilidad de sábados no garantiza un horario fijo.
 
-**Lugar de clases:** Sede Principal de San Sebastián (Calle Bellavista N.º 130 y 140, Cusco).
+## Qué aprenderás
 
-## Información comercial vigente
+- Técnicas culinarias y operación de cocina.
+- Gestión gastronómica.
+- Prácticas culinarias desde el primer ciclo.
 
-La única fuente de tarifas, campañas y promociones de este programa es [gastronomia.pricing.json](gastronomia.pricing.json).
-Lía consulta PricingService directamente; los importes no dependen del índice vectorial.
-No copies precios a este Markdown. Un estado `pending` no significa gratuito.
+La metodología de taller contempla un máximo de 25 estudiantes por taller.
 
-
-## Beneficios e Implementos Incluidos
-
-Con el pago de la matrícula, el estudiante recibe:
-
-- **Uniforme completo institucional**
-- **Insumos** para la totalidad de las prácticas culinarias
-- **Uso de utensilios, equipos y menajería** del instituto en los talleres
-- **Material académico complementario**
-
-**Únicos implementos personales requeridos:** tabla de picar y un cuchillo propios.
-
-### Metodología de Taller
-
-- Prácticas culinarias desde el **primer ciclo**
-- Máximo **25 estudiantes por taller** para garantizar enseñanza personalizada
-
-## Campo Laboral
+## Campo laboral
 
 El egresado puede desempeñarse en:
 
-- Restaurantes y cadenas gastronómicas
-- Hoteles y centros de alojamiento
-- Cafeterías, pastelerías y reposterías
-- Bares y coctelería
-- Empresas de catering y eventos
-- Creación y gestión de negocios gastronómicos propios
+- Restaurantes y cadenas gastronómicas.
+- Hoteles y centros de alojamiento.
+- Cafeterías, pastelerías y reposterías.
+- Bares y coctelería.
+- Empresas de catering y eventos.
+- Creación y gestión de negocios gastronómicos propios.
+
+## Requisitos
+
+Los requisitos documentales generales se encuentran en [admisión y requisitos](../01_institucional/admision_y_pagos.md).
+
+Los implementos personales requeridos para las prácticas son una tabla de picar y un cuchillo propios.
+
+## Información adicional
+
+El título otorgado es el Título Profesional Técnico en Gastronomía a Nombre de la Nación, sujeto al cumplimiento de los requisitos académicos y administrativos.
+
+La ficha del programa contempla, con la matrícula, uniforme completo institucional, insumos para las prácticas culinarias, uso de utensilios, equipos y menajería del instituto, y material académico complementario.
+
+La ubicación, contacto y beneficios comunes se encuentran en la [información institucional](../01_institucional/general.md). Las condiciones comerciales vigentes se consultan según lo indicado en [pagos](../01_institucional/admision_y_pagos.md).

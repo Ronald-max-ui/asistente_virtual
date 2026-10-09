@@ -1,3 +1,4 @@
+import { setAssistantState } from '../ui/state.js';
 /**
  * api/client.js — Cliente SSE streaming con subtítulos sincronizados con audio.
  *
@@ -16,7 +17,7 @@
  *   data: { type: "error", message: "..." }
  */
 
-import { enqueueBase64Audio, clearAudioQueue, beginAudioStream, endAudioStream, onAudioQueueFinished } from '../audio/player.js';
+import { enqueueBase64Audio, waitForAudioCapacity, clearAudioQueue, beginAudioStream, endAudioStream, onAudioQueueFinished } from '../audio/player.js';
 import { setIsProcessingResponse, registrarActividad } from '../avatar/animator.js';
 import { crearHandlerAccion } from './actions.js';
 import { getPersona, setPersona } from '../ui/persona.js';
@@ -36,20 +37,59 @@ export const APP_MODE = (() => {
   return mode;
 })();
 
-// ── Sesión UUID única por pestaña ─────────────────────────────────────────────
-export const SESSION_ID = (() => {
-  const KEY = 'av_kiosk_session_id';
-  let id = sessionStorage.getItem(KEY);
-  if (!id) {
-    id = crypto.randomUUID();
-    sessionStorage.setItem(KEY, id);
+import { SESSION_ID, sessionHeaders, invalidateSession } from './session.js';
+export { SESSION_ID } from './session.js';
+let requestGeneration = 0;
+let activeController = null;
+let activeOperationId = null;
+let replacementNeeded=false;
+// Numeric transport diagnostics, bounded and correlated only by backend operation.
+function transportMetrics() {
+  const now = () => globalThis.performance?.now?.() ?? Date.now();
+  const started = now(), values = {};
+  return {
+    first(name) { if (!(name in values)) values[name] = Math.round((now() - started) * 1000) / 1000; },
+    report(id) {
+      if (!/^[a-f0-9-]{32,36}$/.test(id || '')) return;
+      console.debug?.('[performance]', { request_id:id, ...values });
+    },
+  };
+}
+
+export async function cancelarInteraccion() {
+  setAssistantState('cancelling');
+  const cancelGeneration=++requestGeneration;
+  const rid = activeOperationId;
+  const hadActiveRequest=!!activeController || !!rid;
+  if(hadActiveRequest) replacementNeeded=true;
+  activeController?.abort();
+  activeController = null;
+  activeOperationId = null;
+  clearAudioQueue();
+  setIsProcessingResponse(false);
+  if (hadActiveRequest) {
+    try {
+      await fetch(apiUrl('/api/session/cancel'), {
+        method: 'POST', headers: { 'Content-Type':'application/json', ...await sessionHeaders(crypto.randomUUID()) },
+        body: JSON.stringify({ session_id:SESSION_ID, active_request_id:rid }), signal:AbortSignal.timeout(5000),
+      });
+    } catch { console.warn('[api/client] Cancelación remota no confirmada.'); }
   }
-  console.log(`[api/client] Session ID: ${id}`);
-  return id;
-})();
+  if(cancelGeneration===requestGeneration) setAssistantState('ready');
+}
+
+export async function resetConversation() {
+  await cancelarInteraccion();
+  const res = await fetch(apiUrl('/reset-session'), {
+    method:'POST', headers:{ 'Content-Type':'application/json', ...await sessionHeaders(crypto.randomUUID()) },
+    body:JSON.stringify({ mensaje:'', session_id:SESSION_ID }), signal:AbortSignal.timeout(20000),
+  });
+  if (!res.ok) throw new Error('No se pudo reiniciar la conversación');
+  getSubtitles().textContent = '';
+  setAssistantState('ready');
+}
 
 // ── Referencias DOM ───────────────────────────────────────────────────────────
-const getStatusBadge = () => document.getElementById('status-badge');
 const getSubtitles   = () => document.getElementById('subtitles');
 
 /**
@@ -65,6 +105,21 @@ const getSubtitles   = () => document.getElementById('subtitles');
  *   data: {...}\n
  *   \n
  */
+async function waitForRetry() {
+  const controller = new AbortController();
+  activeController = controller;
+  await new Promise((resolve) => {
+    let timer;
+    const finish = () => {
+      clearTimeout(timer);
+      controller.signal.removeEventListener('abort', finish);
+      resolve();
+    };
+    timer = setTimeout(finish, 1500);
+    controller.signal.addEventListener('abort', finish, { once: true });
+  });
+}
+
 async function _parseSseStream(body, onEvent) {
   const reader  = body.getReader();
   const decoder = new TextDecoder();
@@ -99,13 +154,14 @@ async function _parseSseStream(body, onEvent) {
           if (eventName !== 'message' && !parsed.type) {
             parsed.type = eventName;
           }
-          onEvent(parsed);
+          await onEvent(parsed);
         } catch (parseErr) {
-          console.warn('[api/client] SSE parse error:', parseErr, '|', dataStr.slice(0, 80));
+          console.warn('[api/client] Evento SSE inválido; descartado.');
         }
       }
     }
   } finally {
+    try { await reader.cancel(); } catch (_) {}
     reader.releaseLock();
   }
 }
@@ -114,11 +170,11 @@ async function _parseSseStream(body, onEvent) {
  * Ejecuta físicamente la acción visual en los overlays.
  * @param {object} event - Payload del SSE ui_action
  */
-function _despacharUiAction(event) {
-  const handler = crearHandlerAccion(event?.action);
+function _despacharUiAction(event, isCurrent) {
+  const handler = crearHandlerAccion(event?.action, isCurrent);
   if (!handler) return;
   // Se conserva el hold hasta done y la finalización real de todo el audio.
-  onAudioQueueFinished(handler);
+  onAudioQueueFinished(() => { if (isCurrent()) handler(); });
 }
 
 /**
@@ -128,22 +184,36 @@ function _despacharUiAction(event) {
  * @param {string} pregunta  - Texto de la pregunta del usuario.
  * @param {number} [intentos=0] - Contador interno de reintentos.
  */
-export async function consultarAsistente(pregunta, intentos = 0) {
+export async function consultarAsistente(pregunta, intentos = 0, operation = null) {
+  if (!operation) {
+    const replace = !!activeController || replacementNeeded;
+    activeController?.abort();
+    operation = { requestGeneration:++requestGeneration, key:crypto.randomUUID(), replace, metrics:transportMetrics() };
+    activeOperationId = null;
+  }
+  const isCurrent = () => requestGeneration === operation.requestGeneration;
+  if (!isCurrent()) return;
   clearAudioQueue();
   beginAudioStream();
   let responseDone = false;
   setIsProcessingResponse(true);
+  setAssistantState('processing');
   registrarActividad();
 
   const controller = new AbortController();
+  activeController = controller;
   const timeoutId  = setTimeout(() => controller.abort(), CONNECT_TIMEOUT_MS);
 
   try {
+    const headers = await sessionHeaders(operation.key);
+    if (!isCurrent()) return;
     const res = await fetch(apiUrl('/chat/stream'), {
       method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...headers },
       body:    JSON.stringify({
         mensaje:    pregunta,
+        replace_active: operation.replace,
+        idempotency_key: operation.key,
         session_id: SESSION_ID,
         mode:       APP_MODE,         // kiosk | web (capacidades del dispositivo)
         persona:    getPersona(),     // info | sales (modo manual o escalado)
@@ -151,14 +221,29 @@ export async function consultarAsistente(pregunta, intentos = 0) {
       signal:  controller.signal,
     });
     clearTimeout(timeoutId);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) {
+      if ([401, 410].includes(res.status)) invalidateSession();
+      const error = new Error(`HTTP ${res.status}`);
+      error.noRetry = [401, 403, 409, 410, 422, 429].includes(res.status);
+      throw error;
+    }
 
+    replacementNeeded=false;
+    activeOperationId = res.headers?.get('X-Operation-ID') || activeOperationId;
     // Texto pendiente: llega del SSE antes del audio, se muestra al iniciar el audio
     let pendingText  = '';
     let subtitleText = '';
+    const sentences=[];let visibleIndex=-1;let audioChunks=0;
+    const showThrough=(index)=>{visibleIndex=Math.max(visibleIndex,index);subtitleText=sentences.slice(0,visibleIndex+1).join(' ');getSubtitles().textContent=subtitleText;};
     let micDetenido  = false;
 
-    await _parseSseStream(res.body, (event) => {
+    await _parseSseStream(res.body, async (event) => {
+      if (!isCurrent()) return;
+      operation.received=true;
+      if (event.request_id) {
+        if (!activeOperationId) activeOperationId = event.request_id;
+        if (activeOperationId !== event.request_id) return;
+      }
       if (responseDone) {
         console.warn('[api/client] Evento posterior al cierre; ignorado.');
         return;
@@ -172,25 +257,32 @@ export async function consultarAsistente(pregunta, intentos = 0) {
       switch (event.type) {
 
         case 'text':
+          operation.metrics?.first('first_text_sse_ms');
           // ── Guardar el texto pero NO mostrarlo todavía ─────────────────────
-          pendingText = event.text;
+          if(pendingText) showThrough(sentences.length-1);
+          pendingText = event.text;sentences.push(event.text);
+          setAssistantState('responding');
           break;
 
         case 'audio': {
           const textoDeEsteChunk = pendingText;
+          const sentenceIndex=sentences.length-1;
           pendingText = '';
 
-          if (!event.audio_b64) break;
+          if (!event.audio_b64) {showThrough(sentenceIndex);break;}
+          audioChunks++;
 
+          await waitForAudioCapacity();
+          if (!isCurrent()) break;
           enqueueBase64Audio(
             event.audio_b64,
             null,
             () => {
-              if (textoDeEsteChunk) {
-                subtitleText += (subtitleText ? ' ' : '') + textoDeEsteChunk;
-                getSubtitles().textContent = subtitleText;
-                getStatusBadge().textContent = 'Hablando...';
-                getStatusBadge().className   = '';
+              if (isCurrent()) operation.metrics?.first('first_audio_play_ms');
+              if (isCurrent() && textoDeEsteChunk) {
+                operation.metrics?.first('first_visible_response_ms');
+                showThrough(sentenceIndex);
+                setAssistantState('speaking');
               }
             },
           );
@@ -210,7 +302,7 @@ export async function consultarAsistente(pregunta, intentos = 0) {
         case 'ui_action':
           // ── Despachar acción UI (galería, formulario, pago) ────────────────
           // No afecta audio ni subtítulos — se gestiona en overlays.js
-          _despacharUiAction(event);
+          _despacharUiAction(event, () => isCurrent() && responseDone);
           break;
 
         case 'notice':
@@ -220,12 +312,17 @@ export async function consultarAsistente(pregunta, intentos = 0) {
 
         case 'done':
           responseDone = true;
+          if(!audioChunks) {const notice=document.getElementById('capability-notice');if(notice) notice.textContent='Respuesta disponible por escrito. Puedes continuar.';}
+          operation.metrics?.first('transport_done_ms');
           setIsProcessingResponse(false);
           registrarActividad();
           onAudioQueueFinished(() => {
+            if (!isCurrent()) return;
+            operation.metrics?.first('first_visible_response_ms');
+            operation.metrics?.first('playback_done_ms');
+            operation.metrics?.report(activeOperationId);
             getSubtitles().textContent = event.full_text || subtitleText || pendingText;
-            getStatusBadge().textContent = 'Toca el micrófono para hablar';
-            getStatusBadge().className = '';
+            setAssistantState('ready');
           });
           endAudioStream();
           break;
@@ -236,9 +333,8 @@ export async function consultarAsistente(pregunta, intentos = 0) {
           setIsProcessingResponse(false);
           registrarActividad();
           getSubtitles().textContent   = 'Ocurrió un error. Por favor, intenta de nuevo.';
-          getStatusBadge().textContent = 'Toca el micrófono para hablar';
-          getStatusBadge().className   = '';
-          console.error('[api/client] Error del servidor:', event.message);
+          setAssistantState('error');
+          console.error('[api/client] Proveedor no disponible.');
           break;
 
         default:
@@ -249,19 +345,22 @@ export async function consultarAsistente(pregunta, intentos = 0) {
 
   } catch (err) {
     clearTimeout(timeoutId);
+    if (!isCurrent()) return;
     clearAudioQueue();
 
-    if (intentos < MAX_REINTENTOS) {
-      getStatusBadge().textContent = `Reintentando... (${intentos + 1}/${MAX_REINTENTOS})`;
-      await new Promise(r => setTimeout(r, 1500));
-      return consultarAsistente(pregunta, intentos + 1);
+    if (!operation.received && !err.noRetry && intentos < MAX_REINTENTOS) {
+      setAssistantState('processing');
+      await waitForRetry();
+      return consultarAsistente(pregunta, intentos + 1, operation);
     }
 
     setIsProcessingResponse(false);
     registrarActividad();
-    getSubtitles().textContent   = 'No pude conectarme. Por favor, intenta de nuevo.';
-    getStatusBadge().textContent = 'Toca el micrófono para hablar';
-    getStatusBadge().className   = '';
-    console.error('[api/client] Error tras reintentos:', err);
+    getSubtitles().textContent = 'No pude completar la respuesta. Por favor, intenta de nuevo.';
+    setAssistantState('error');
+    console.error('[api/client] Consulta no completada.');
+  } finally {
+    clearTimeout(timeoutId);
+    if (isCurrent() && activeController === controller) activeController = null;
   }
 }

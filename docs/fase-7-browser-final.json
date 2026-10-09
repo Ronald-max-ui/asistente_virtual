@@ -1,0 +1,219 @@
+{
+  "timings": {
+    "frames": 24,
+    "draws": 72,
+    "shader_ms": 0,
+    "texture_ms": 0.10000000149011612,
+    "avatar_ms": 801.3000000007451,
+    "conversation": null
+  },
+  "heap_bytes": 58996162,
+  "navigation": [
+    {
+      "dom_ms": 199.10000000149012,
+      "load_ms": 200.10000000149012
+    }
+  ],
+  "resources": [
+    {
+      "name": "index-Br99_BdX.js",
+      "duration_ms": 16.199999999254942,
+      "start_ms": 32.100000001490116,
+      "end_ms": 48.30000000074506,
+      "transfer_bytes": 24456,
+      "body_bytes": 24156
+    },
+    {
+      "name": "three-DG_x4P4N.js",
+      "duration_ms": 31.800000000745058,
+      "start_ms": 32.600000001490116,
+      "end_ms": 64.40000000223517,
+      "transfer_bytes": 610530,
+      "body_bytes": 610230
+    },
+    {
+      "name": "index-By6Xs_eg.css",
+      "duration_ms": 25.699999999254942,
+      "start_ms": 32.70000000298023,
+      "end_ms": 58.400000002235174,
+      "transfer_bytes": 3580,
+      "body_bytes": 3280
+    },
+    {
+      "name": "vrm-ETle7MWq.js",
+      "duration_ms": 28.099999997764826,
+      "start_ms": 32.70000000298023,
+      "end_ms": 60.80000000074506,
+      "transfer_bytes": 138950,
+      "body_bytes": 138650
+    },
+    {
+      "name": "config",
+      "duration_ms": 16.399999998509884,
+      "start_ms": 198.40000000223517,
+      "end_ms": 214.80000000074506,
+      "transfer_bytes": 0,
+      "body_bytes": 0
+    },
+    {
+      "name": "favicon.ico",
+      "duration_ms": 9.599999997764826,
+      "start_ms": 208.20000000298023,
+      "end_ms": 217.80000000074506,
+      "transfer_bytes": 760,
+      "body_bytes": 460
+    },
+    {
+      "name": "lia_original.vrm?v=f5d9783610a78eaa9b266c1921b6ba6e771e60b863c8c7c59d88fdbce91417d3",
+      "duration_ms": 240.10000000149012,
+      "start_ms": 220.10000000149012,
+      "end_ms": 460.20000000298023,
+      "transfer_bytes": 0,
+      "body_bytes": 0
+    }
+  ],
+  "paint": [
+    {
+      "name": "first-paint",
+      "ms": 364
+    },
+    {
+      "name": "first-contentful-paint",
+      "ms": 364
+    }
+  ],
+  "marks": [
+    {
+      "name": "lia-avatar-config",
+      "ms": 21.100000001490116
+    },
+    {
+      "name": "lia-avatar-download-parse",
+      "ms": 553.1999999992549
+    },
+    {
+      "name": "lia-avatar-scene-setup",
+      "ms": 29.900000002235174
+    }
+  ],
+  "resume_frames": 57,
+  "audio_transfer": {
+    "original_bytes": 5120,
+    "base64_bytes": 6828,
+    "json_parse_ms": 0.003300000000745058,
+    "json_plus_decode_ms": 0.005800000000745058
+  },
+  "avatar_network": [
+    {
+      "status": 200,
+      "disk_cache": false,
+      "network_bytes": 17729965
+    }
+  ],
+  "warm_reload": {
+    "timings": {
+      "frames": 16,
+      "draws": 48,
+      "shader_ms": 0.19999999925494194,
+      "texture_ms": 0,
+      "avatar_ms": 688.3000000007451,
+      "conversation": null
+    },
+    "heap_bytes": 59686521,
+    "navigation": [
+      {
+        "dom_ms": 206.5,
+        "load_ms": 207.90000000223517
+      }
+    ],
+    "resources": [
+      {
+        "name": "index-Br99_BdX.js",
+        "duration_ms": 6.599999997764826,
+        "start_ms": 137.60000000149012,
+        "end_ms": 144.19999999925494,
+        "transfer_bytes": 300,
+        "body_bytes": 0
+      },
+      {
+        "name": "three-DG_x4P4N.js",
+        "duration_ms": 7.100000001490116,
+        "start_ms": 137.69999999925494,
+        "end_ms": 144.80000000074506,
+        "transfer_bytes": 300,
+        "body_bytes": 0
+      },
+      {
+        "name": "index-By6Xs_eg.css",
+        "duration_ms": 8.600000001490116,
+        "start_ms": 137.80000000074506,
+        "end_ms": 146.40000000223517,
+        "transfer_bytes": 300,
+        "body_bytes": 0
+      },
+      {
+        "name": "vrm-ETle7MWq.js",
+        "duration_ms": 9.899999998509884,
+        "start_ms": 137.80000000074506,
+        "end_ms": 147.69999999925494,
+        "transfer_bytes": 300,
+        "body_bytes": 0
+      },
+      {
+        "name": "config",
+        "duration_ms": 12.099999997764826,
+        "start_ms": 205.90000000223517,
+        "end_ms": 218,
+        "transfer_bytes": 0,
+        "body_bytes": 0
+      },
+      {
+        "name": "lia_original.vrm?v=f5d9783610a78eaa9b266c1921b6ba6e771e60b863c8c7c59d88fdbce91417d3",
+        "duration_ms": 59,
+        "start_ms": 227.69999999925494,
+        "end_ms": 286.69999999925494,
+        "transfer_bytes": 0,
+        "body_bytes": 0
+      }
+    ],
+    "paint": [
+      {
+        "name": "first-paint",
+        "ms": 180
+      },
+      {
+        "name": "first-contentful-paint",
+        "ms": 180
+      }
+    ],
+    "marks": [
+      {
+        "name": "lia-avatar-config",
+        "ms": 21.199999999254942
+      },
+      {
+        "name": "lia-avatar-download-parse",
+        "ms": 438.19999999925494
+      },
+      {
+        "name": "lia-avatar-scene-setup",
+        "ms": 23.5
+      }
+    ],
+    "avatar_network": [
+      {
+        "status": 200,
+        "disk_cache": true,
+        "network_bytes": 0
+      }
+    ]
+  },
+  "visible": true,
+  "render_test": {
+    "seconds": 4,
+    "visible_frames": 180,
+    "hidden_frames": 0,
+    "hidden_draws": 0
+  },
+  "environment": "headless Chrome, localhost, software GPU; hidden simulated via visibilitychange"
+}

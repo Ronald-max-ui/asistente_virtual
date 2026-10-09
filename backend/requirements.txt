@@ -17,18 +17,24 @@ edge-tts==7.2.8
 
 # ── RAG: Embeddings + Vector Store ───────────────────────────────────────────
 fastembed==0.8.1
+onnxruntime==1.30.0       # Motor ONNX validado con el modelo del manifiesto
+numpy==2.5.3             # Integridad numérica de embeddings (dependencia ya instalada)
 chromadb==1.5.9
-langchain==1.4.3
-langchain-community==0.4.2
 langchain-core==1.6.6
 langchain-text-splitters==1.1.2
 
-# ── Cargadores de documentos (ingest.py) ─────────────────────────────────────
-pypdf==6.19.0
-docx2txt==0.9
 
 # ── Utilidades ────────────────────────────────────────────────────────────────
 python-dotenv==1.2.3
 pydantic==2.13.5
-pydantic-settings==2.15.0
 httpx==0.28.1
+Pillow==12.3.0            # Firma/decodificación y límites de imágenes de comprobantes
+
+PyYAML==6.0.3            # Metadatos académicos y validador de conocimiento
+anyio==4.15.1           # Cancelación protegida de sesiones y streams
+pydantic-settings==2.15.0 # Requerido por ChromaDB (también al validar readiness)
+
+websockets==16.1.1 # Diagnóstico opcional de navegador vía CDP (ya instalado)
+
+# Administrative password hashing (Argon2id)
+argon2-cffi==25.1.0

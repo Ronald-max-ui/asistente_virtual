@@ -1,5 +1,4 @@
 """Configuración comercial independiente de Groq y del directorio de ejecución."""
-import os
 from pathlib import Path
 from threading import RLock
 from dotenv import load_dotenv
@@ -9,12 +8,11 @@ load_dotenv(BASE / '.env')
 _repository = None
 _lock = RLock()
 
-def database_path():
-    path = Path(os.getenv('COMMERCIAL_DB_PATH', 'storage/commercial.sqlite3'))
-    return path.resolve() if path.is_absolute() else (BASE / path).resolve()
+from runtime_config import private_path, administrative_token
 
-def admin_token():
-    return os.getenv('ADMIN_API_TOKEN', '')
+def database_path(): return private_path('COMMERCIAL_DB_PATH', 'storage/commercial.sqlite3')
+
+def admin_token(): return administrative_token()
 
 def get_repository():
     global _repository

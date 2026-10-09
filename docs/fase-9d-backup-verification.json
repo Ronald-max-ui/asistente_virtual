@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "counts": {
+    "leads": 1,
+    "lead_tracking": 1,
+    "lead_activity": 9,
+    "lead_tasks": 1,
+    "vouchers": 1
+  },
+  "integrity": "ok",
+  "read_only": true
+}

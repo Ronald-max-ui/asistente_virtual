@@ -4,9 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Asistente Virtual</title>
+  <link id="app-favicon" rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
+    <header id="assistant-brand"><img id="assistant-logo" hidden alt="Logo institucional" /><span id="assistant-name"></span></header>
     <!-- Aura lumínica trasera: z-index 1 (detrás del canvas 3D, z-index 2) -->
     <div id="lia-aura" class="aura-sales"></div>
 
@@ -17,17 +19,25 @@
     </div>
 
     <!-- Subtítulos / Transcripción (flotando por encima del micrófono) -->
-    <div id="subtitles" class="captions-container"></div>
+    <div id="subtitles" aria-live="polite" aria-atomic="true" class="captions-container"></div>
 
     <!-- Contenedor inferior fijo: estado y botón de micrófono -->
     <div id="ui-container" class="controls-container">
-      <div id="status-badge">Toca el micrófono para hablar</div>
-      <button id="mic-btn" aria-label="Hablar">
+      <div id="status-badge" role="status" aria-live="polite">Iniciando…</div>
+      <button id="mic-btn" aria-label="Hablar" disabled>
         <svg id="mic-icon" viewBox="0 0 24 24" width="28" height="28" fill="white">
           <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
           <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
         </svg>
       </button>
+      <button id="stop-btn" type="button" hidden>Detener respuesta</button>
+      <form id="text-form" hidden>
+        <label for="text-message" class="sr-only">Escribe tu pregunta</label>
+        <input id="text-message" name="message" maxlength="2000" placeholder="Escribe tu pregunta…" autocomplete="off" required />
+        <button id="text-send" type="submit">Enviar</button>
+      </form>
+      <p id="capability-notice" role="status"></p>
+      <button id="retry-start" type="button" hidden>Reintentar conexión</button>
     </div>
     <script type="module" src="/src/main.js"></script>
   </body>

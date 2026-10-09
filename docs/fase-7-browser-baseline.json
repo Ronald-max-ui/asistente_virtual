@@ -1,0 +1,77 @@
+{
+  "timings": {
+    "frames": 34,
+    "draws": 72,
+    "shader_ms": 0.09999999776482582,
+    "texture_ms": 0.09999999776482582,
+    "avatar_ms": 1024.699999999255
+  },
+  "heap_bytes": 55667784,
+  "navigation": [
+    {
+      "dom_ms": 370.3999999985099,
+      "load_ms": 374.3999999985099
+    }
+  ],
+  "resources": [
+    {
+      "name": "index-CgZq0oum.js",
+      "duration_ms": 42.400000002235174,
+      "start_ms": 140.39999999850988,
+      "end_ms": 182.80000000074506,
+      "transfer_bytes": 783471,
+      "body_bytes": 783171
+    },
+    {
+      "name": "index-By6Xs_eg.css",
+      "duration_ms": 32.69999999925494,
+      "start_ms": 140.69999999925494,
+      "end_ms": 173.39999999850988,
+      "transfer_bytes": 3580,
+      "body_bytes": 3280
+    },
+    {
+      "name": "config",
+      "duration_ms": 70.19999999925494,
+      "start_ms": 367.19999999925494,
+      "end_ms": 437.3999999985099,
+      "transfer_bytes": 0,
+      "body_bytes": 0
+    },
+    {
+      "name": "favicon.ico",
+      "duration_ms": 5.800000000745058,
+      "start_ms": 379.19999999925494,
+      "end_ms": 385,
+      "transfer_bytes": 760,
+      "body_bytes": 460
+    },
+    {
+      "name": "lia_original.vrm",
+      "duration_ms": 293.69999999925494,
+      "start_ms": 440.1000000014901,
+      "end_ms": 733.8000000007451,
+      "transfer_bytes": 0,
+      "body_bytes": 0
+    }
+  ],
+  "paint": [
+    {
+      "name": "first-paint",
+      "ms": 344
+    },
+    {
+      "name": "first-contentful-paint",
+      "ms": 344
+    }
+  ],
+  "marks": [],
+  "visible": true,
+  "render_test": {
+    "seconds": 4,
+    "visible_frames": 201,
+    "hidden_frames": 217,
+    "hidden_draws": 5208
+  },
+  "environment": "headless Chrome, localhost, software GPU; hidden simulated via visibilitychange"
+}

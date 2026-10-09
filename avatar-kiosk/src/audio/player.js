@@ -22,9 +22,20 @@ let currentSourceNode  = null;
 let queueCallbacks = new Set();
 let generation = 0;
 let streamHolds = 0;
+const MAX_PENDING_AUDIO = 8;
+const capacityWaiters = new Set();
+function releaseCapacity() {
+  if (bufferQueue.length >= MAX_PENDING_AUDIO) return;
+  for (const resolve of capacityWaiters) resolve();
+  capacityWaiters.clear();
+}
+export function waitForAudioCapacity() {
+  if (bufferQueue.length < MAX_PENDING_AUDIO) return Promise.resolve();
+  return new Promise((resolve) => capacityWaiters.add(resolve));
+}
 
 function invoke(callback) {
-  try { callback?.(); } catch (err) { console.error('[audio/player] Callback fallido:', err); }
+  try { callback?.(); } catch (err) { console.error('[audio/player] Callback fallido.'); }
 }
 
 function notifyFinished() {
@@ -75,7 +86,7 @@ export function unlockAudio() {
   try {
     const ctx = _initAudioContext();
     if (ctx.state === 'suspended') {
-      ctx.resume().catch((err) => console.warn('[audio/player] Error resumiendo AudioContext:', err));
+      ctx.resume().catch((err) => console.warn('[audio/player] Error resumiendo AudioContext.'));
     }
 
     // Inyectar un micro-buffer de silencio (1 muestra a 22050Hz) para autorizar el contexto en iOS
@@ -84,11 +95,12 @@ export function unlockAudio() {
       const source = ctx.createBufferSource();
       source.buffer = buffer;
       source.connect(ctx.destination);
+      source.onended = () => { source.disconnect(); source.buffer = null; source.onended = null; };
       source.start(0);
     }
     console.log('[audio/player] AudioContext desbloqueado exitosamente para iOS/Safari');
   } catch (err) {
-    console.warn('[audio/player] Error en unlockAudio:', err);
+    console.warn('[audio/player] Error en unlockAudio.');
   }
 }
 
@@ -106,6 +118,7 @@ function _processBufferQueue() {
   const item = bufferQueue[0];
   if (!item.ready) return;
   bufferQueue.shift();
+  releaseCapacity();
   if (!item.buffer) {
     invoke(item.onPlayCallback); // Subtítulos siguen disponibles aunque falle el audio.
     invoke(item.onEndCallback);
@@ -123,6 +136,9 @@ function _processBufferQueue() {
     _isSpeaking = true;
     source.onended = () => {
       source.disconnect();
+      source.onended = null;
+      source.buffer = null;
+      item.buffer = null;
       // Una cancelación no puede finalizar una nueva fuente ni disparar callbacks viejos.
       if (item.generation !== generation || currentSourceNode !== source) return;
       currentSourceNode = null;
@@ -134,7 +150,7 @@ function _processBufferQueue() {
     source.start(0);
     invoke(item.onPlayCallback);
   } catch (err) {
-    console.error('[audio/player] Reproducción fallida:', err);
+    console.error('[audio/player] Reproducción fallida.');
     currentSourceNode?.disconnect();
     currentSourceNode = null;
     isPlayingQueue = false;
@@ -162,7 +178,7 @@ async function decodeItem(item, load) {
       promise?.then(resolve, reject);
     });
   } catch (err) {
-    console.warn('[audio/player] Audio no disponible:', err);
+    console.warn('[audio/player] Audio no disponible.');
   } finally {
     if (item.generation === generation) {
       item.ready = true;
@@ -225,7 +241,9 @@ export function clearAudioQueue() {
 
 export function stopCurrentAudio() {
   generation++;
+  for (const item of bufferQueue) item.buffer = null;
   bufferQueue = [];
+  releaseCapacity();
   queueCallbacks.clear();
   streamHolds = 0;
   isPlayingQueue = false;
@@ -234,6 +252,14 @@ export function stopCurrentAudio() {
   currentSourceNode = null;
   if (source) {
     source.onended = null;
-    try { source.stop(); source.disconnect(); } catch (_) {}
+    try { source.stop(); source.disconnect(); source.buffer = null; } catch (_) {}
   }
+}
+
+export async function disposeAudio() {
+  stopCurrentAudio();
+  analyser?.disconnect();
+  if (audioContext?.close) await audioContext.close();
+  audioContext = null; analyser = null; dataArray = null;
+  window.audioCtx = null;
 }

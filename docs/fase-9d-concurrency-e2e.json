@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "checks": [
+    "test_concurrent_admin_writers_only_one_commits",
+    "test_two_http_admins_stale_write_is_rejected"
+  ],
+  "storage": "temporary SQLite",
+  "providers": "synthetic"
+}

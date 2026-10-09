@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "checks": [
+    "test_edge_sdk_receives_selected_parameters",
+    "test_voice_end_to_end_new_conversation_uses_selection",
+    "test_voice_snapshot_stable_and_legacy_preserved",
+    "test_voice_validation_and_fixed_preview_limit",
+    "test_branding_end_to_end_etag_public_whitelist_audit"
+  ],
+  "duration_ms": 4696,
+  "providers": "synthetic adapter; real HTTP/services/SQLite"
+}

@@ -1,0 +1,3 @@
+export const modules=[['dashboard','Dashboard',null],['programs','Programas','programs.read'],['prices','Precios','prices.read'],['campaigns','Campañas','campaigns.read'],['avatars','Avatares','avatars.read'],['appearance','Apariencia','settings.read'],['leads','Prospectos','leads.read'],['vouchers','Comprobantes','vouchers.read'],['users','Usuarios','users.read'],['audit','Auditoría','audit.read'],['configuration','Configuración','settings.read']];
+export const allowedModules = permissions => modules.filter(([, ,permission])=>!permission || permissions.includes(permission));
+export const canWrite = (permissions,resource) => permissions.includes(resource+'.write');

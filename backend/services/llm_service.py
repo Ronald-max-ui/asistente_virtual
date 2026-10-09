@@ -11,13 +11,25 @@ Las acciones se solicitan como llamadas de herramienta separadas del texto.
 from groq import AsyncGroq
 
 from config import settings
+from security.config import SecuritySettings
 from services.pricing_service import instrucciones_tarifas, sanear_tarifas_texto
 from services.media_registry import MEDIA_REGISTRY
 from services.action_service import herramientas_llm
 from services.llm_protocol import AssistantReply, ToolCallCollector
 
-# ── Cliente Groq (instancia única) ───────────────────────────────────────────
-_groq_client = AsyncGroq(api_key=settings.groq_api_key)
+# Explicit runtime composition supplies the client. Standalone compatibility
+# calls initialise a client lazily, rather than creating SDK resources on import.
+_groq_client = None
+
+def create_client(configuration=settings):
+    return AsyncGroq(api_key=configuration.groq_api_key,
+        timeout=getattr(configuration, 'security', SecuritySettings()).groq_timeout, max_retries=0)
+
+def provider_client(client=None):
+    global _groq_client
+    if client is not None: return client
+    if _groq_client is None: _groq_client = create_client()
+    return _groq_client
 
 # ── Prompt base (reglas comunes a ambas personas) ────────────────────────────
 _BASE_PROMPT = """
@@ -90,6 +102,7 @@ def construir_prompt_sistema(
     shown_media: list = None,
     funnel_stage: str = "discovery",
     lead_submitted: bool = False,
+    *, pricing=None,
 ) -> str:
     """Compone el prompt: reglas base + persona + estado del embudo + catalogo no mostrado + acciones."""
     if persona == "info":
@@ -98,7 +111,7 @@ def construir_prompt_sistema(
         persona_block = _PERSONA_SALES
 
 
-    names = [tool["function"]["name"] for tool in herramientas_llm(mode=mode, persona=persona, lead_submitted=lead_submitted)]
+    names = [tool["function"]["name"] for tool in herramientas_llm(mode=mode, persona=persona, lead_submitted=lead_submitted, pricing=pricing)]
     actions = f"Herramientas disponibles por la política del backend: {names}."
     media_list = shown_media or []
     # Recursos del catálogo visual (excluyendo yape_qr que es recurso de pago) que no han sido mostrados
@@ -121,16 +134,17 @@ def _construir_mensajes(
     historial: list, contexto: str, pregunta: str,
     mode: str = "web", persona: str = "sales", shown_media: list = None,
     funnel_stage: str = "discovery", lead_submitted: bool = False,
+    *, pricing=None, configuration=None,
 ) -> list:
     """Ensambla el array de mensajes para la API de Groq."""
     mensajes = [{
         "role": "system",
         "content": construir_prompt_sistema(
             mode=mode, persona=persona, shown_media=shown_media,
-            funnel_stage=funnel_stage, lead_submitted=lead_submitted,
+            funnel_stage=funnel_stage, lead_submitted=lead_submitted, pricing=pricing,
         ),
     }]
-    max_turns = settings.session_max_history_turns * 2
+    max_turns = (configuration or settings).session_max_history_turns * 2
     for turno in historial[-max_turns:]:
         mensajes.append(turno)
     prompt_actual = f"CONTEXTO INSTITUCIONAL:\n{contexto}\n\nCONSULTA:\n{pregunta}"
@@ -158,21 +172,26 @@ async def generar_respuesta_llm(
     shown_media: list = None,
     funnel_stage: str = "discovery",
     lead_submitted: bool = False,
+    *, client=None, pricing=None, configuration=None,
 ) -> AssistantReply:
     """Modo estandar (no streaming). Se mantiene para el endpoint /chat."""
     mensajes = _construir_mensajes(
         historial, contexto, pregunta,
         mode=mode, persona=persona, shown_media=shown_media,
-        funnel_stage=funnel_stage, lead_submitted=lead_submitted,
+        funnel_stage=funnel_stage, lead_submitted=lead_submitted, pricing=pricing, configuration=configuration,
     )
-    completion = await _groq_client.chat.completions.create(
+    completion = await provider_client(client).chat.completions.create(
         messages=mensajes,
-        model=settings.groq_model,
-        temperature=settings.groq_temperature,
-        max_tokens=settings.groq_max_tokens,
-        tools=herramientas_llm(mode=mode, persona=persona, lead_submitted=lead_submitted),
+        model=(configuration or settings).groq_model,
+        temperature=(configuration or settings).groq_temperature,
+        max_tokens=(configuration or settings).groq_max_tokens,
+        tools=herramientas_llm(mode=mode, persona=persona, lead_submitted=lead_submitted, pricing=pricing),
         tool_choice="auto",
     )
+    from services.performance import current_trace
+    trace=current_trace.get()
+    tokens=getattr(getattr(completion,'usage',None),'completion_tokens',None)
+    if trace and isinstance(tokens,int):trace.values['llm_tokens']=tokens
     choice = completion.choices[0]
     collector = ToolCallCollector()
     collector.feed(choice.message.tool_calls)
@@ -189,19 +208,20 @@ async def stream_respuesta_llm(
     shown_media: list = None,
     funnel_stage: str = "discovery",
     lead_submitted: bool = False,
+    *, client=None, pricing=None, configuration=None,
 ):
     """Modo streaming: retorna un AsyncStream de chunks de Groq."""
     mensajes = _construir_mensajes(
         historial, contexto, pregunta,
         mode=mode, persona=persona, shown_media=shown_media,
-        funnel_stage=funnel_stage, lead_submitted=lead_submitted,
+        funnel_stage=funnel_stage, lead_submitted=lead_submitted, pricing=pricing, configuration=configuration,
     )
-    return await _groq_client.chat.completions.create(
+    return await provider_client(client).chat.completions.create(
         messages=mensajes,
-        model=settings.groq_model,
-        temperature=settings.groq_temperature,
-        max_tokens=settings.groq_max_tokens,
-        tools=herramientas_llm(mode=mode, persona=persona, lead_submitted=lead_submitted),
+        model=(configuration or settings).groq_model,
+        temperature=(configuration or settings).groq_temperature,
+        max_tokens=(configuration or settings).groq_max_tokens,
+        tools=herramientas_llm(mode=mode, persona=persona, lead_submitted=lead_submitted, pricing=pricing),
         tool_choice="auto",
         stream=True,
     )

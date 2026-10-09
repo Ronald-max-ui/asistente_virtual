@@ -20,6 +20,7 @@
  */
 
 import * as THREE from 'three';
+import { createRenderLoop } from './renderLoop.js';
 import { getCurrentVrm } from './loader.js';
 import { isCurrentlySpeaking, getAnalyser, playAudio, stopCurrentAudio } from '../audio/player.js';
 
@@ -494,7 +495,8 @@ function _updateAttractionStateMachine(delta, isSpeaking) {
           });
         } else {
           // Modo web: sin audio, transición directa tras la animación de saludo
-          setTimeout(() => {
+          attractionTimer = setTimeout(() => {
+            attractionTimer = null;
             if (animState === 'SPEAKING_ATTRACT') {
               animState  = 'RETURNING';
               stateTimer = 0;
@@ -547,12 +549,8 @@ function _updateAttractionStateMachine(delta, isSpeaking) {
 export function startAnimation(renderer, scene, camera, mode = 'web') {
   // En modo web no reproducimos audios de atracción (política autoplay móvil)
   attractionAudioEnabled = (mode === 'kiosk');
-  const clock = new THREE.Clock();
-
-  function animate() {
-    requestAnimationFrame(animate);
-    const delta       = clock.getDelta();
-    const elapsedTime = clock.getElapsedTime();
+  stopAnimation?.();
+  function animate(delta, elapsedTime) {
     const isSpeaking  = isCurrentlySpeaking();
 
     // 1. Máquina de estados (define animState y targets de posición)
@@ -597,5 +595,13 @@ export function startAnimation(renderer, scene, camera, mode = 'web') {
     renderer.render(scene, camera);
   }
 
-  animate();
+  stopAnimation = createRenderLoop(animate);
+  return stopAnimation;
+}
+let stopAnimation = null;
+let attractionTimer = null;
+export function disposeAnimation() {
+  stopAnimation?.(); stopAnimation = null;
+  if (attractionTimer !== null) clearTimeout(attractionTimer);
+  attractionTimer = null;
 }

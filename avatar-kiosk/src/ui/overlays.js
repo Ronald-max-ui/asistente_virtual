@@ -1,3 +1,4 @@
+import { bindDialog } from './modalAccessibility.js';
 /**
  * ui/overlays.js — Componentes de UI overlay para el Modo Web.
  *
@@ -16,7 +17,7 @@
  * deshabilitados. Conserva los mismos estilos en ambos dispositivos.
  */
 
-import { SESSION_ID } from '../api/client.js';
+import { SESSION_ID, sessionHeaders, formOperationKey, invalidateSession } from '../api/session.js';
 
 import { apiUrl, resolverMediaUrl } from '../api/config.js';
 export { BACKEND_URL, resolverMediaUrl } from '../api/config.js';
@@ -78,13 +79,13 @@ export function openGallery(actionPayload) {
   const titulo   = resource.titulo   || actionPayload.title || 'Instituto Tuinen Star';
   const desc     = resource.descripcion || actionPayload.description || '';
 
-  console.warn('[UI_ACTION] Disparando modal de galeria:', { imgUrl, titulo, actionPayload });
+  console.log('[UI_ACTION] Abriendo galería.');
 
   const modal = _renderModal('gallery-modal', `
     <div class="ov-modal-inner ov-gallery ov-modal-content">
       <button class="ov-close ov-close-btn">&times;</button>
       <div class="ov-img-container">
-        <img src="${escapeHtml(imgUrl)}" alt="${escapeHtml(titulo)}" class="ov-gallery-img ov-modal-img" />
+        <img loading="lazy" decoding="async" src="${escapeHtml(imgUrl)}" alt="${escapeHtml(titulo)}" class="ov-gallery-img ov-modal-img" />
       </div>
       <div class="ov-gallery-info ov-text-container">
         <h3>${escapeHtml(titulo)}</h3>
@@ -107,8 +108,11 @@ export function openGallery(actionPayload) {
 export function openLeadForm(actionPayload) {
   if (_mode === 'kiosk') return;
   const carrera = actionPayload.program_label || '';
+  if(sessionStorage.getItem('lia-lead:'+SESSION_ID)) {
+    _renderModal('lead-modal','<div class="ov-modal-inner"><button class="ov-close">✕</button><h2>Datos registrados</h2><p>Ya recibimos tus datos. Un asesor te contactará. Para corregirlos, solicita ayuda al asesor.</p></div>');return;
+  }
 
-  console.log('[OVERLAYS] Abriendo formulario de contacto para:', carrera);
+  console.log('[OVERLAYS] Abriendo formulario de contacto.');
 
   const modal = _renderModal('lead-modal', `
     <div class="ov-modal-inner ov-lead ov-lead-modal-card">
@@ -122,19 +126,19 @@ export function openLeadForm(actionPayload) {
         <input type="hidden" name="carrera" value="${escapeHtml(carrera)}">
         <div class="ov-field">
           <label>Nombre completo *</label>
-          <input type="text" name="nombre" required placeholder="Tu nombre" autocomplete="name">
+          <input type="text" name="nombre" maxlength="120" required placeholder="Tu nombre" autocomplete="name">
         </div>
         <div class="ov-field">
           <label>WhatsApp *</label>
-          <input type="tel" name="whatsapp" required placeholder="9XX XXX XXX" autocomplete="tel">
+          <input type="tel" name="whatsapp" maxlength="24" required placeholder="9XX XXX XXX" autocomplete="tel">
         </div>
         <div class="ov-field">
           <label>Carrera / Curso de interés</label>
-          <input type="text" name="carrera_display" value="${escapeHtml(carrera)}" placeholder="Ej: Gastronomía">
+          <input type="text" name="carrera_display" maxlength="120" value="${escapeHtml(carrera)}" placeholder="Ej: Gastronomía">
         </div>
         <div class="ov-field">
           <label>Notas adicionales</label>
-          <textarea name="notas" rows="2" placeholder="Horario preferido, consultas..."></textarea>
+          <textarea name="notas" maxlength="2000" rows="2" placeholder="Horario preferido, consultas..."></textarea>
         </div>
         <button type="submit" class="ov-btn-primary" id="lead-submit-btn">
           Enviar mis datos →
@@ -160,12 +164,12 @@ export function openPayment(actionPayload) {
   const yapeNumero = actionPayload.payment_number || '';
   const paymentContent = confirmed ? `
       <p class="ov-payment-sub">Carrera: <strong>${escapeHtml(carrera)}</strong> — Monto: <strong>${escapeHtml(monto)} soles</strong></p>
-      <img src="${escapeHtml(qrUrl)}" alt="QR Yape" class="ov-qr-img">
+      <img loading="lazy" decoding="async" src="${escapeHtml(qrUrl)}" alt="QR Yape" class="ov-qr-img">
       <p class="ov-yape-num">📱 Yape al <strong>${escapeHtml(yapeNumero)}</strong></p>
       <hr class="ov-divider">
       <p class="ov-upload-label">Sube tu voucher aquí para solicitar la verificación de tu pago:</p>
       <form id="voucher-form">
-        <input type="file" name="imagen" accept="image/jpeg,image/png,image/webp" required class="ov-file-input" id="voucher-file">
+        <input type="file" name="imagen" accept="image/jpeg,image/png,image/webp" required class="ov-file-input" id="voucher-file" aria-label="Comprobante JPG, PNG o WebP">
         <button type="submit" class="ov-btn-primary" id="voucher-submit-btn">Enviar comprobante ✓</button>
         <p id="voucher-msg" class="ov-msg"></p>
       </form>` : `
@@ -197,7 +201,8 @@ function _renderModal(id, html, extraBackdropClass = '') {
 
   // Cerrar cualquier modal previo del mismo id si existe
   const prev = document.getElementById(id);
-  if (prev) prev.remove();
+  if(prev?._uploadBusy) return null;
+  if (prev) {clearTimeout(prev._autoCloseTimer);prev._releaseFocus?.();prev.remove();}
 
   const backdrop = document.createElement('div');
   backdrop.id = id;
@@ -215,14 +220,19 @@ function _renderModal(id, html, extraBackdropClass = '') {
   void backdrop.offsetWidth;
   backdrop.classList.add('ov-visible');
   backdrop.querySelector('.ov-close')?.addEventListener('click', () => _closeModal(id));
+  backdrop._releaseFocus=bindDialog(backdrop,()=>_closeModal(id));
   return backdrop;
 }
 
 function _closeModal(id) {
   if (id === 'gallery-modal') _cancelGalleryAutoClose();
   const el = document.getElementById(id);
-  if (!el) return;
+  if (!el || el._uploadBusy) return;
+  clearTimeout(el._autoCloseTimer);
+  if(el.style) el.style.pointerEvents='none';
+  el.inert=true;
   el.classList.remove('ov-visible');
+  el._releaseFocus?.();el._releaseFocus=null;
   el.addEventListener('transitionend', () => el.remove(), { once: true });
   // Fallback si transitionend no se dispara (mayor que el fade lento de 0.7s)
   setTimeout(() => { if (el.parentElement) el.remove(); }, 900);
@@ -253,6 +263,8 @@ function _armGalleryAutoClose() {
   }, GALLERY_AUTOCLOSE_MS);
 
   const card = backdrop.querySelector('.ov-modal-inner') || backdrop;
+  card.addEventListener('focusin', _cancelGalleryAutoClose, { once: true });
+  if(card.contains?.(document.activeElement)) _cancelGalleryAutoClose();
   card.addEventListener('mouseenter', _cancelGalleryAutoClose, { once: true });
   card.addEventListener('touchstart', _cancelGalleryAutoClose, { once: true, passive: true });
 }
@@ -263,6 +275,7 @@ async function submitLead(e) {
   const form   = e.target;
   const btn    = document.getElementById('lead-submit-btn');
   const msg    = document.getElementById('lead-msg');
+  if (btn.disabled) return;
   const data   = new FormData(form);
   if (SESSION_ID) {
     data.append('session_id', SESSION_ID);
@@ -274,16 +287,22 @@ async function submitLead(e) {
 
   btn.disabled = true;
   btn.textContent = 'Enviando...';
+  const modal=document.getElementById('lead-modal');modal._uploadBusy=true;modal.setAttribute('aria-busy','true');
 
   try {
-    const res = await fetch(apiUrl('/api/leads'), { method: 'POST', body: data });
+    const headers = await sessionHeaders();
+    data.set('session_id', SESSION_ID);
+    headers['Idempotency-Key'] = formOperationKey(form, data);
+    const res = await fetch(apiUrl('/api/leads'), { method: 'POST', body: data, headers, signal:AbortSignal.timeout(30000) });
     const json = await res.json();
     if (res.ok) {
+      sessionStorage.setItem('lia-lead:'+SESSION_ID,'registered');
       msg.textContent = '¡Listo! Te contactaremos pronto por WhatsApp.';
       msg.className = 'ov-msg ov-msg-ok';
       btn.textContent = '¡Enviado! ✓';
-      setTimeout(() => _closeModal('lead-modal'), 3000);
+      modal._autoCloseTimer=setTimeout(() => {if(document.getElementById('lead-modal')===modal) _closeModal('lead-modal');},3000);
     } else {
+      if ([401, 410].includes(res.status)) invalidateSession();
       throw new Error(json.message || 'Error al enviar');
     }
   } catch (err) {
@@ -291,7 +310,7 @@ async function submitLead(e) {
     msg.className = 'ov-msg ov-msg-error';
     btn.disabled = false;
     btn.textContent = 'Reintentar';
-  }
+  } finally {modal._uploadBusy=false;modal.setAttribute('aria-busy','false');}
 };
 
 async function submitVoucher(e, action) {
@@ -299,7 +318,9 @@ async function submitVoucher(e, action) {
   const form = e.target;
   const btn  = document.getElementById('voucher-submit-btn');
   const msg  = document.getElementById('voucher-msg');
+  if (btn.disabled) return;
   const data = new FormData(form);
+  data.append('session_id', SESSION_ID);
   data.append('carrera', action.program);
   data.append('monto', String(action.amount));
   data.append('concepto', action.concept);
@@ -308,16 +329,22 @@ async function submitVoucher(e, action) {
 
   btn.disabled = true;
   btn.textContent = 'Subiendo...';
+  const modal=document.getElementById('payment-modal');modal._uploadBusy=true;modal.setAttribute('aria-busy','true');
+  msg.textContent='Enviando comprobante para validación…';
 
   try {
-    const res  = await fetch(apiUrl('/api/vouchers'), { method: 'POST', body: data });
+    const headers = await sessionHeaders();
+    data.set('session_id', SESSION_ID);
+    headers['Idempotency-Key'] = formOperationKey(form, data);
+    const res  = await fetch(apiUrl('/api/vouchers'), { method: 'POST', body: data, headers, signal:AbortSignal.timeout(45000) });
     const json = await res.json();
     if (res.ok) {
-      msg.textContent = '¡Comprobante recibido! Verificaremos tu pago pronto.';
+      msg.textContent = 'Comprobante recibido y pendiente de revisión.';
       msg.className = 'ov-msg ov-msg-ok';
       btn.textContent = '¡Enviado! ✓';
-      setTimeout(() => _closeModal('payment-modal'), 4000);
+      modal._autoCloseTimer=setTimeout(() => {if(document.getElementById('payment-modal')===modal) _closeModal('payment-modal');},4000);
     } else {
+      if ([401, 410].includes(res.status)) invalidateSession();
       throw new Error(json.message || 'Error al subir');
     }
   } catch (err) {
@@ -325,7 +352,7 @@ async function submitVoucher(e, action) {
     msg.className = 'ov-msg ov-msg-error';
     btn.disabled = false;
     btn.textContent = 'Reintentar';
-  }
+  } finally {modal._uploadBusy=false;modal.setAttribute('aria-busy','false');}
 };
 
 // ── Estilos CSS ────────────────────────────────────────────────────────────────

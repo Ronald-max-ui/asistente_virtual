@@ -6,47 +6,57 @@ titulo: "Admisión, Requisitos y Métodos de Pago"
 tags: ["admision", "matricula", "inscripcion", "requisitos", "documentos", "pagos", "yape", "bbva", "bcp", "cuotas", "congelamiento"]
 ---
 
-# Admisión, Requisitos y Métodos de Pago
+# Admisión, requisitos y métodos de pago
 
-## Proceso de Admisión e Inscripción
+## Inicio del trámite de admisión
 
-El costo o gratuidad de la inscripción depende de la campaña vigente del programa. Consulta su archivo `*.pricing.json` mediante PricingService; un precio pendiente no significa gratuito.
+Para las carreras técnicas, el postulante puede iniciar el trámite de matrícula presentando su Documento Nacional de Identidad (DNI). Dispone de un plazo máximo de 15 días para regularizar los documentos restantes.
 
-El postulante puede iniciar su matrícula presentando únicamente su **Documento Nacional de Identidad (DNI)** para asegurar su vacante. Dispone de un plazo máximo de **15 días** para presentar los documentos restantes:
+Presentar el DNI permite iniciar el trámite; no equivale por sí solo a confirmar la reserva de vacante ni la matrícula.
 
-- Copia legible del DNI
-- Certificado de estudios actualizado
-- 1 fotografía tamaño carnet
-- Partida de nacimiento
+## Requisitos documentales generales
 
-La vacante queda reservada formalmente con el **pago de la matrícula** del programa elegido.
+La documentación general para carreras técnicas comprende:
 
-## Métodos de Pago Oficiales
+- Copia legible del DNI.
+- Certificado de estudios actualizado.
+- Una fotografía tamaño carnet.
+- Partida de nacimiento.
 
-Los pagos pueden realizarse por los siguientes canales:
+Los cursos cortos pueden tener requisitos particulares. Debe consultarse la ficha del curso; esta lista no se aplica automáticamente a todos los cursos.
+
+## Reserva de vacante
+
+La política institucional contempla la reserva formal de vacante con la matrícula del programa elegido, una vez confirmado el pago cuando corresponda y validado el trámite por admisión.
+
+La disponibilidad de vacantes y las condiciones vigentes deben confirmarse para el programa. Si la tarifa es gratuita, no se exige un comprobante de un cobro inexistente; admisión confirma el trámite de reserva.
+
+## Tarifas, promociones y campañas vigentes
+
+Los precios, promociones y campañas vigentes se consultan dinámicamente en el sistema comercial para el programa, modalidad, turno y concepto correspondientes.
+
+El sistema consulta la tarifa actual antes de informar un importe o habilitar un pago. Un precio pendiente de confirmación no significa que sea gratuito. No se deducen descuentos, mensualidades ni totales de ciclo a partir de este documento.
+
+## Métodos de pago oficiales
+
+Los canales documentados son:
 
 | Canal | Datos |
 |---|---|
-| **Yape** | A nombre de Corporativo Tuinen Star — Número: **994 773 335** |
-| **Transferencia BBVA** | CCI: **011-201-000100038687-18** |
-| **Transferencia BCP** | CCI: **002-28500720927504553** |
+| Yape | A nombre de Corporativo Tuinen Star; número 994 773 335 |
+| Transferencia BBVA | CCI: 011-201-000100038687-18 |
+| Transferencia BCP | CCI: 002-28500720927504553 |
 
-### Validación de Pago
+Los datos de pago se facilitan cuando el usuario solicita expresamente pagar o pide los datos del canal, respetando su consentimiento. No se ofrecen durante consultas generales sin autorización.
 
-Es obligatorio que el postulante envíe la **captura o foto del voucher de pago** por el mismo chat. Un asesor de admisiones validará el comprobante para confirmar formalmente la matrícula.
+## Recepción y revisión de comprobantes
 
-Los datos bancarios se facilitan únicamente cuando el usuario decide matricularse o solicita expresamente los datos de pago, no durante consultas de información general.
+Cuando corresponde un pago, el postulante puede enviar la captura o foto del comprobante mediante el chat. Recibir la imagen significa que el comprobante está pendiente de revisión; no confirma automáticamente un pago ni una matrícula.
 
-## Política de Congelamiento de Cuotas
+Un asesor de admisiones revisa el comprobante y el trámite para confirmar la matrícula. Los medios de pago documentados no implican que el asistente realice conciliación bancaria automática.
 
-Los montos de mensualidad se mantienen **congelados** para el estudiante mientras curse sus estudios de manera **continua y regular**.
+## Política de continuidad de cuotas
 
-Si el estudiante interrumpe la carrera o curso por **más de 1 año** y decide retomar, deberá sujetarse a las tarifas y costos vigentes al momento de su reincorporación.
+La política institucional documentada contempla mantener las mensualidades del estudiante mientras curse sus estudios de manera continua y regular.
 
-## Pago de Matrícula por Programa
-
-Las matrículas se consultan directamente en el archivo comercial `*.pricing.json` de cada programa, bajo `02_carreras` o `03_cursos_cortos`. No se mantienen importes duplicados en este documento.
-
-## Beneficio por Pago Adelantado (Ciclo Completo al Contado)
-
-Los pagos al contado, totales de ciclo y promociones dependen de la campaña vigente de cada programa y modalidad. PricingService consulta los importes finales autorizados y las condiciones de su archivo comercial; no se deducen descuentos ni totales desde este texto.
+Si interrumpe la carrera o curso por más de un año y retoma, se aplican las condiciones vigentes al reincorporarse. La condición concreta del estudiante debe ser confirmada por admisión: esta política documental no habilita a deducir ni sobrescribir una tarifa del sistema comercial.

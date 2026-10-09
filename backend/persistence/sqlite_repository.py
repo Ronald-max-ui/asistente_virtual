@@ -1,6 +1,9 @@
 """Único adaptador SQL: SQLite, montos decimales como TEXT, escrituras atómicas."""
 import json
 import sqlite3
+from runtime_config import sqlite_timeout
+import os
+import tempfile
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
@@ -22,8 +25,11 @@ CREATE TABLE IF NOT EXISTS avatars(id TEXT PRIMARY KEY, name TEXT NOT NULL, url 
 CREATE UNIQUE INDEX IF NOT EXISTS single_active_avatar ON avatars(active) WHERE active=1;
 CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY, value_json TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL, created_by TEXT, updated_by TEXT);
 CREATE TABLE IF NOT EXISTS configuration_migrations(key TEXT PRIMARY KEY, fingerprint TEXT NOT NULL, applied_at TEXT NOT NULL);
-PRAGMA user_version=1;
+
 """
+_SCHEMA += '''
+CREATE TABLE IF NOT EXISTS branding_assets(id TEXT PRIMARY KEY,purpose TEXT NOT NULL,filename TEXT UNIQUE NOT NULL,mime TEXT NOT NULL,sha256 TEXT NOT NULL,width INTEGER NOT NULL,height INTEGER NOT NULL,created_at REAL NOT NULL,created_by TEXT NOT NULL);
+'''
 _TABLES = {'programs','prices','campaigns','avatars'}
 
 def _now(): return datetime.now(timezone.utc).isoformat()
@@ -36,16 +42,36 @@ class SQLiteRepository:
         self.path.parent.mkdir(parents=True,exist_ok=True)
         db = self._connect()
         try:
-            if db.execute('PRAGMA user_version').fetchone()[0] > 1:
+            if db.execute('PRAGMA user_version').fetchone()[0] > 3:
                 raise ValueError('Versión de base comercial no compatible')
-            db.executescript(_SCHEMA)
+            from persistence.admin_schema import SCHEMA as ADMIN_SCHEMA
+            from security.admin_policy import ROLES
+            db.executescript('BEGIN IMMEDIATE;\n' + _SCHEMA + ADMIN_SCHEMA)
+            db.executemany('INSERT OR IGNORE INTO admin_roles(id) VALUES(?)', [(r,) for r in ROLES])
+            db.execute('PRAGMA user_version=3')
+            db.commit()
+            db.execute('PRAGMA journal_mode=WAL')
         finally:
             db.close()
+        if os.name != 'nt': os.chmod(self.path, 0o600)
     def _connect(self):
-        db = sqlite3.connect(self.path, timeout=10)
+        timeout = sqlite_timeout()
+        db = sqlite3.connect(self.path, timeout=timeout)
         db.row_factory = sqlite3.Row
         db.execute('PRAGMA foreign_keys=ON')
+        db.execute('PRAGMA synchronous=FULL')
         return db
+
+    def health(self):
+        if not self.path.is_file(): return False
+        db = self._connect()
+        try:
+            return db.execute('PRAGMA quick_check').fetchone()[0] == 'ok' and not db.execute('PRAGMA foreign_key_check').fetchone()
+        finally: db.close()
+
+    def backup(self, destination):
+        from persistence.sqlite_backup import backup_sqlite
+        return backup_sqlite(self.path, self._connect, destination)
     @contextmanager
     def transaction(self, *, write=False):
         db = self._connect()
@@ -133,3 +159,11 @@ class SQLiteUnit:
         return self.db.execute('SELECT 1 FROM configuration_migrations WHERE key=?',(key,)).fetchone() is not None
     def record_migration(self,key,fingerprint):
         self.db.execute('INSERT INTO configuration_migrations VALUES (?,?,?)',(key,fingerprint,_now()))
+
+    def audit(self,actor,action,resource,identifier,before,after,request_id):
+        from persistence.audit import append_audit
+        return append_audit(self.db,actor,action,resource,identifier,before,after,request_id)
+
+    def branding_asset(self,filename):
+        row=self.db.execute('SELECT purpose FROM branding_assets WHERE filename=?',(filename,)).fetchone()
+        return dict(row) if row else None

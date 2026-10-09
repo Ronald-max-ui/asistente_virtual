@@ -1,0 +1,18 @@
+{
+  "passed": true,
+  "checks": [
+    "test_backup_and_migration_indexes_are_additive",
+    "test_capture_tracking_tasks_voucher_review_convert_end_to_end",
+    "test_concurrent_admin_writers_only_one_commits",
+    "test_csv_injection_filtered_no_notes_audited",
+    "test_exact_dashboard_calendar_and_cohort_counts",
+    "test_idempotency_conflict_stale_etag_and_required_keys",
+    "test_loss_note_and_aware_dates",
+    "test_permissions_assignment_validation_no_price_privileges",
+    "test_search_duplicates_filters_and_privacy",
+    "test_two_http_admins_stale_write_is_rejected",
+    "test_version_two_migration_preserves_capture_and_seeds_new"
+  ],
+  "storage": "temporary SQLite",
+  "providers": "synthetic"
+}

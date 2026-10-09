@@ -6,98 +6,106 @@ titulo: "Preguntas Frecuentes — Instituto Tuinen Star"
 tags: ["faq", "preguntas", "respuestas", "admision", "pagos", "horarios", "modalidad", "requisitos", "virtual", "presencial", "gastronomia", "turismo", "contabilidad", "administracion"]
 ---
 
-# Preguntas Frecuentes — Instituto Tuinen Star
+# Preguntas frecuentes — Instituto Tuinen Star
 
-## Sobre la Institución
+## Institución y contacto
 
-**¿El instituto tiene sede en Lima?**
-No. El Instituto Tuinen Star opera únicamente en Cusco, Perú. Las clases se dictan en la Sede Principal de San Sebastián y la oficina de inscripciones está en Wanchaq.
+### ¿El instituto tiene sede en Lima?
 
-**¿Cuántas sedes tienen?**
-Dos puntos: la Sede Principal en San Sebastián (Calle Bellavista 130 y 140) donde se dictan todas las clases, y la Oficina de Wanchaq (Av. Garcilaso 304, frente al Mercado de Wanchaq) solo para informes, inscripciones y matrículas.
+No. La institución opera en Cusco. La sede académica y la oficina de informes tienen funciones distintas; consulta sus ubicaciones en la [información institucional](../01_institucional/general.md).
 
-**¿Cuál es el teléfono de contacto?**
-949 355 435. Atención de lunes a viernes en dos turnos: mañana de 8:00 a.m. a 1:00 p.m. y tarde de 2:00 p.m. a 7:00 p.m.
+### ¿Dónde encuentro el teléfono y el horario de atención?
 
----
+El contacto y el horario de atención presencial se encuentran en la [información institucional](../01_institucional/general.md). No deben confundirse con los horarios de clases.
 
-## Sobre Admisión y Matrícula
+## Admisión y matrícula
 
-**¿Qué necesito para matricularme?**
-Solo tu DNI para iniciar la matrícula y reservar tu vacante. Tienes hasta 15 días para regularizar el certificado de estudios, la fotografía tamaño carnet y la partida de nacimiento.
+### ¿Qué necesito para iniciar la matrícula?
 
-**¿La inscripción tiene costo?**
-El importe o gratuidad se consulta en PricingService desde el archivo comercial del programa y su campaña vigente. Un estado pendiente no significa gratuito.
+Los requisitos generales de las carreras están en [admisión y requisitos](../01_institucional/admision_y_pagos.md). Los cursos pueden tener requisitos particulares indicados en su ficha. Iniciar el trámite no equivale a confirmar una reserva.
 
-**¿Cómo reservo mi vacante?**
-La vacante se reserva formalmente con el pago de la matrícula del programa elegido. Las vacantes son limitadas.
+### ¿La inscripción tiene costo?
 
-**¿Cuándo empiezan las clases?**
-Las carreras profesionales técnicas (Gastronomía, Contabilidad, Administración, Turismo) inician el **5 de octubre de 2026**. Los cursos cortos de Bartender y Panadería y Pastelería inician el **15 de noviembre**.
+El sistema consulta la tarifa actual del programa en la base comercial antes de responder. Un importe pendiente no significa gratuito. No hay un precio fijo publicado en esta FAQ.
 
----
+### ¿Cómo reservo mi vacante?
 
-## Sobre Pagos
+Admisión confirma la disponibilidad y formaliza el trámite conforme a la política de [reserva de vacante](../01_institucional/admision_y_pagos.md). Enviar una imagen de comprobante no confirma automáticamente la matrícula.
 
-**¿Cómo puedo pagar la matrícula o las cuotas?**
-Por Yape al número 994 773 335 (a nombre de Corporativo Tuinen Star), por transferencia BBVA al CCI 011-201-000100038687-18, o por transferencia BCP al CCI 002-28500720927504553. Luego debes enviar la foto del voucher por el chat para que un asesor confirme tu matrícula.
+### ¿Cuándo empiezan las clases?
 
-**¿Las cuotas pueden subir si sigo estudiando regularmente?**
-No. Los montos se mantienen congelados mientras estudies de manera continua y regular. Solo cambian si interrumpes la carrera por más de 1 año y decides retomar.
+El inicio depende del programa y periodo. Debe confirmarse con admisión; esta FAQ no publica fechas de convocatorias anteriores como fechas vigentes.
 
-**¿Hay descuento si pago el ciclo completo al contado?**
-Las promociones y los importes finales dependen de la campaña, programa y modalidad. Consulta PricingService; no se aplica un porcentaje general ni se deducen ahorros desde el contenido informativo.
+## Pagos y condiciones comerciales
 
----
+### ¿Cómo puedo pagar la matrícula o las cuotas?
 
-## Sobre Modalidades y Horarios
+Los canales oficiales y el proceso de revisión se describen en [métodos de pago](../01_institucional/admision_y_pagos.md). Antes de pagar, el sistema consulta la tarifa vigente del programa y la variante correspondiente.
 
-**¿Puedo estudiar de noche de forma virtual?**
-Sí, en Contabilidad, Administración de Empresas y Guía Oficial de Turismo hay turno noche virtual de lunes a viernes de 6:30 p.m. a 9:30 p.m. por Google Meet. Las clases quedan grabadas.
+### ¿Recibir mi comprobante significa que mi pago está aprobado?
 
-**¿Gastronomía tiene modalidad virtual?**
-No. Gastronomía es 100% presencial en todos sus turnos. No tiene modalidad virtual ni a distancia.
+No. La recepción significa que está pendiente de revisión. Admisión confirma el resultado del trámite conforme al proceso de [revisión de comprobantes](../01_institucional/admision_y_pagos.md).
 
-**¿Gastronomía tiene clases los sábados?**
-Sí. Hay una modalidad de fin de semana presencial los sábados de 8:00 a.m. a 6:30 p.m., diseñada para personas que trabajan entre semana.
+### ¿Las cuotas pueden cambiar si sigo estudiando regularmente?
 
-**¿Los cursos de Bartender y Panadería tienen clases entre semana?**
-No. Ambos cursos se dictan exclusivamente los sábados. Bartender tiene turnos de 9:00 a.m. a 12:00 p.m. y de 3:00 p.m. a 6:00 p.m. Panadería tiene turnos de 8:00 a.m. a 12:00 p.m. y de 2:00 p.m. a 6:00 p.m.
+La política documental de continuidad está en [admisión y pagos](../01_institucional/admision_y_pagos.md). Admisión debe confirmar su aplicación al estudiante; el asistente no calcula una tarifa distinta por su cuenta.
 
-**¿Si no puedo asistir a una clase virtual, la puedo ver después?**
-Sí. Todas las clases virtuales quedan grabadas y disponibles en la plataforma Q10 para repaso o en caso de inasistencia.
+### ¿Hay descuento por pagar el ciclo completo al contado?
 
----
+El sistema consulta la promoción y la tarifa actuales para el programa, modalidad, turno y concepto. No se aplica un descuento general ni se deduce un total a partir del conocimiento informativo.
 
-## Sobre los Programas
+### ¿Cuánto cuesta la matrícula de Gastronomía?
 
-**¿Qué título obtengo al terminar una carrera técnica?**
-Título Profesional Técnico a Nombre de la Nación, emitido por el Instituto Tuinen Star con respaldo del MINEDU.
+El sistema consulta la tarifa actual de Gastronomía, indicando modalidad y turno cuando sean necesarios. La [ficha académica de Gastronomía](../02_carreras/gastronomia.md) explica su formación y beneficios, sin publicar importes.
 
-**¿El certificado de Bartender o Panadería equivale a un título técnico?**
-No. Los cursos cortos entregan una certificación institucional del Instituto Tuinen Star, no un Título Profesional Técnico.
+## Modalidades y horarios
 
-**¿Cuál carrera enseña japonés?**
-Guía Oficial de Turismo. Es la única carrera que incluye formación en inglés y japonés con certificaciones progresivas de idiomas.
+### ¿Puedo estudiar de forma virtual?
 
-**¿Puedo continuar estudiando en la universidad después de terminar una carrera técnica?**
-Sí. El instituto tiene convenios de continuidad universitaria que permiten convalidar estudios y cursar aproximadamente 2 años adicionales para obtener un Título Profesional Universitario. La convalidación no es automática; depende de los convenios vigentes y los requisitos de la universidad en convenio.
+Administración de Empresas, Contabilidad y Guía Oficial de Turismo describen modalidad virtual en sus fichas. Los turnos y horarios se confirman para cada programa y periodo; no se generalizan al resto de la oferta.
 
-**¿Tienen bolsa de trabajo?**
-Sí. Todos los egresados de carreras técnicas tienen acceso a prácticas preprofesionales y oportunidades laborales a través de TUINEN JOB.
+### ¿Gastronomía tiene modalidad virtual?
 
-**¿Necesito experiencia previa para el curso de Bartender?**
-No. El curso está diseñado para aprender desde cero. No se requiere experiencia previa.
+No. La [ficha de Gastronomía](../02_carreras/gastronomia.md) describe formación presencial.
 
----
+### ¿Qué programas pueden tener clases o actividades los sábados?
 
-## Sobre Gastronomía en Detalle
+Gastronomía, Bartender y Panadería y Pastelería pueden tener clases o actividades los sábados. Esta condición no se extiende automáticamente a Administración, Contabilidad ni Turismo, ni garantiza un horario para cada edición.
 
-**¿Cuánto cuesta la matrícula de Gastronomía?**
-Consulta la matrícula vigente de Gastronomía en su archivo `02_carreras/gastronomia.pricing.json` mediante PricingService, indicando modalidad y turno si hay tarifas diferentes.
+### ¿Bartender y Panadería se dictan exclusivamente los sábados?
 
-**¿Qué implementos debo llevar a Gastronomía?**
-Solo tu tabla de picar y un cuchillo. Todo lo demás —uniforme, insumos, utensilios y equipos— está incluido.
+La posibilidad de actividades sabatinas no establece exclusividad. Deben confirmarse los turnos y horarios de cada edición en admisión, conforme a las fichas de [Bartender](../03_cursos_cortos/bartender.md) y [Panadería y Pastelería](../03_cursos_cortos/panaderia_pasteleria.md).
 
-**¿Cuántos alumnos hay por clase en Gastronomía?**
-Máximo 25 estudiantes por taller para garantizar una enseñanza personalizada.
+### ¿Puedo repasar una clase virtual después?
+
+Las clases virtuales quedan grabadas. Las funciones documentadas de Google Meet y Q10 están en [plataformas académicas](../01_institucional/general.md); la ubicación y acceso a las grabaciones deben confirmarse con el área académica.
+
+## Formación y beneficios
+
+### ¿Qué título o certificado obtengo?
+
+Las carreras técnicas y los cursos cortos otorgan credenciales diferentes. El título o certificado específico y sus condiciones se encuentran en la ficha de cada programa; un certificado de curso no equivale a un título técnico.
+
+### ¿Cuál carrera enseña japonés?
+
+[Guía Oficial de Turismo](../02_carreras/turismo.md) incluye inglés y japonés con certificaciones progresivas de idiomas.
+
+### ¿Puedo continuar estudiando en la universidad?
+
+La continuidad depende de convenios y requisitos de la universidad. No es automática ni garantizada. Consulta los [beneficios institucionales](../01_institucional/general.md).
+
+### ¿Existe bolsa de trabajo?
+
+La información sobre prácticas preprofesionales y TUINEN JOB está en los [beneficios institucionales](../01_institucional/general.md).
+
+### ¿Necesito experiencia previa para Bartender?
+
+No. La [ficha de Bartender](../03_cursos_cortos/bartender.md) describe formación desde cero y sus requisitos específicos.
+
+### ¿Qué implementos necesito para Gastronomía?
+
+La [ficha de Gastronomía](../02_carreras/gastronomia.md) detalla los implementos personales y los beneficios vinculados a la matrícula. No se trasladan esas condiciones a otros programas.
+
+### ¿Cuántos estudiantes hay por taller de Gastronomía?
+
+El límite documentado se encuentra en la metodología de taller de la [ficha de Gastronomía](../02_carreras/gastronomia.md).

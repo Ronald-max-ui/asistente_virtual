@@ -1,27 +1,18 @@
 """Rutas administrativas separadas y bloqueadas sin credencial explícita."""
-import secrets
-from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi import APIRouter, Depends, HTTPException, Request, Path, Response
+from typing import Annotated
 from pydantic import ValidationError
-from commercial_runtime import admin_token, get_repository
+from api.dependencies import services
+from security.auth import require_admin, permission
 from persistence.models import ProgramRecord, PriceRecord, CampaignRecord, AvatarRecord, SettingsRecord
 from services.commercial_service import CommercialService
-from services.avatar_service import AvatarService
+from security.logging import request_id
+from domain.revision import revision
 
-public_router = APIRouter()
-security = HTTPBearer(auto_error=False)
+Identifier = Annotated[str, Path(min_length=1, max_length=128, pattern=r'^[a-zA-Z0-9_-]+$')]
 
 def service(request: Request):
-    return getattr(request.app.state, 'commercial_service', None) or CommercialService(get_repository())
-
-def require_admin(request: Request, credentials: HTTPAuthorizationCredentials | None = Depends(security)):
-    token = getattr(request.app.state, 'admin_api_token', None)
-    token = admin_token() if token is None else token
-    if not token:
-        raise HTTPException(503, 'Administración deshabilitada: falta configurar ADMIN_API_TOKEN')
-    if not credentials or credentials.scheme.lower() != 'bearer' or not secrets.compare_digest(credentials.credentials.encode('utf-8'), token.encode('utf-8')):
-        raise HTTPException(401, 'Credencial administrativa inválida', headers={'WWW-Authenticate': 'Bearer'})
-    return 'admin-token'
+    return getattr(request.app.state, 'commercial_service', None) or services(request).commercial
 
 admin_router = APIRouter(prefix='/api/admin', dependencies=[Depends(require_admin)], tags=['commercial-admin'])
 
@@ -33,29 +24,26 @@ def operation(callback):
     except ValueError as exc:
         raise HTTPException(409, str(exc)) from exc
 
-@public_router.get('/api/config')
-def public_config(commercial: CommercialService = Depends(service)):
-    return AvatarService(commercial.repository).public_config()
-
 def register_resource(resource, model):
     # Los nombres de recursos son constantes; no hay nombres SQL provenientes del cliente.
     def list_records(commercial: CommercialService = Depends(service)):
         return commercial.list(resource)
-    def get_record(identifier: str, commercial: CommercialService = Depends(service)):
+    def get_record(identifier: Identifier, response: Response, commercial: CommercialService = Depends(service)):
         record = commercial.get(resource, identifier)
         if record is None:
             raise HTTPException(404, 'Registro inexistente')
+        response.headers['ETag'] = revision(record)
         return record
-    def create_record(body: model, commercial: CommercialService = Depends(service)):
-        return operation(lambda: commercial.save(resource, body.model_dump(mode='json'), create=True))
-    def update_record(identifier: str, body: model, commercial: CommercialService = Depends(service)):
+    def create_record(body: model, commercial: CommercialService = Depends(service), principal=Depends(permission(resource+'.write'))):
+        return operation(lambda: commercial.save(resource, body.model_dump(mode='json'), principal.actor, create=True, request_id=request_id.get()))
+    def update_record(identifier: Identifier, body: model, request: Request, commercial: CommercialService = Depends(service), principal=Depends(permission(resource+'.write'))):
         if body.id != identifier:
             raise HTTPException(422, 'ID del cuerpo diferente del ID de la ruta')
         if commercial.get(resource, identifier) is None:
             raise HTTPException(404, 'Registro inexistente')
-        return operation(lambda: commercial.save(resource, body.model_dump(mode='json')))
-    admin_router.add_api_route('/' + resource, list_records, methods=['GET'], name='list_' + resource)
-    admin_router.add_api_route('/' + resource + '/{identifier}', get_record, methods=['GET'], name='get_' + resource)
+        return operation(lambda: commercial.save(resource, body.model_dump(mode='json'), principal.actor, request_id=request_id.get(), expected=request.headers.get('if-match')))
+    admin_router.add_api_route('/' + resource, list_records, methods=['GET'], name='list_' + resource, dependencies=[Depends(permission(resource+'.read'))])
+    admin_router.add_api_route('/' + resource + '/{identifier}', get_record, methods=['GET'], name='get_' + resource, dependencies=[Depends(permission(resource+'.read'))])
     admin_router.add_api_route('/' + resource, create_record, methods=['POST'], status_code=201, name='create_' + resource)
     admin_router.add_api_route('/' + resource + '/{identifier}', update_record, methods=['PUT'], name='update_' + resource)
 
@@ -63,13 +51,15 @@ for resource, model in [('programs', ProgramRecord), ('prices', PriceRecord), ('
     register_resource(resource, model)
 
 @admin_router.post('/avatars/{identifier}/activate')
-def activate(identifier: str, commercial: CommercialService = Depends(service)):
-    return operation(lambda: commercial.activate_avatar(identifier))
+def activate(identifier: Identifier, request: Request, commercial: CommercialService = Depends(service), principal=Depends(permission('avatars.write'))):
+    return operation(lambda: commercial.activate_avatar(identifier, principal.actor, request_id=request_id.get(), expected=request.headers.get('if-match')))
 
-@admin_router.get('/settings')
-def settings(commercial: CommercialService = Depends(service)):
-    return commercial.settings()
+@admin_router.get('/settings', dependencies=[Depends(permission('settings.read'))])
+def settings(response: Response, commercial: CommercialService = Depends(service)):
+    result = commercial.settings()
+    response.headers['ETag'] = revision(result)
+    return result
 
 @admin_router.put('/settings')
-def save_settings(body: SettingsRecord, commercial: CommercialService = Depends(service)):
-    return operation(lambda: commercial.save_settings(body.model_dump(mode='json')))
+def save_settings(body: SettingsRecord, request: Request, commercial: CommercialService = Depends(service), principal=Depends(permission('settings.write'))):
+    return operation(lambda: commercial.save_settings(body.model_dump(mode='json'), principal.actor, request_id=request_id.get(), expected=request.headers.get('if-match')))

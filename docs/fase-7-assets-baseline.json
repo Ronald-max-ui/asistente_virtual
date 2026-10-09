@@ -1,0 +1,199 @@
+{
+  "bundle": [
+    {
+      "file": "index-CgZq0oum.js",
+      "bytes": 783171,
+      "gzip_bytes": 194763
+    }
+  ],
+  "source_bytes_by_category": {
+    "three": 2287702,
+    "three-vrm": 988239,
+    "own": 89703
+  },
+  "source_module_count": 18,
+  "avatar": {
+    "bytes": 17729200,
+    "sha256": "111229d8e6d45bca15422279bbb34a92fcd9bdb3f12236cf81a107c93f4a63e4",
+    "meshes": 3,
+    "materials": 17,
+    "images": [
+      {
+        "width": 512,
+        "height": 512,
+        "encoded_bytes": 45781,
+        "rgba_bytes": 1048576
+      },
+      {
+        "width": 8,
+        "height": 8,
+        "encoded_bytes": 69,
+        "rgba_bytes": 256
+      },
+      {
+        "width": 8,
+        "height": 8,
+        "encoded_bytes": 79,
+        "rgba_bytes": 256
+      },
+      {
+        "width": 1024,
+        "height": 512,
+        "encoded_bytes": 178386,
+        "rgba_bytes": 2097152
+      },
+      {
+        "width": 1024,
+        "height": 512,
+        "encoded_bytes": 15484,
+        "rgba_bytes": 2097152
+      },
+      {
+        "width": 1024,
+        "height": 1024,
+        "encoded_bytes": 397607,
+        "rgba_bytes": 4194304
+      },
+      {
+        "width": 1024,
+        "height": 1024,
+        "encoded_bytes": 15779,
+        "rgba_bytes": 4194304
+      },
+      {
+        "width": 1024,
+        "height": 512,
+        "encoded_bytes": 146568,
+        "rgba_bytes": 2097152
+      },
+      {
+        "width": 1024,
+        "height": 256,
+        "encoded_bytes": 25767,
+        "rgba_bytes": 1048576
+      },
+      {
+        "width": 1024,
+        "height": 256,
+        "encoded_bytes": 24067,
+        "rgba_bytes": 1048576
+      },
+      {
+        "width": 1024,
+        "height": 256,
+        "encoded_bytes": 53460,
+        "rgba_bytes": 1048576
+      },
+      {
+        "width": 2048,
+        "height": 2048,
+        "encoded_bytes": 661944,
+        "rgba_bytes": 16777216
+      },
+      {
+        "width": 2048,
+        "height": 2048,
+        "encoded_bytes": 2829857,
+        "rgba_bytes": 16777216
+      },
+      {
+        "width": 1024,
+        "height": 1024,
+        "encoded_bytes": 208715,
+        "rgba_bytes": 4194304
+      },
+      {
+        "width": 512,
+        "height": 512,
+        "encoded_bytes": 86176,
+        "rgba_bytes": 1048576
+      },
+      {
+        "width": 1024,
+        "height": 512,
+        "encoded_bytes": 541083,
+        "rgba_bytes": 2097152
+      },
+      {
+        "width": 2048,
+        "height": 2048,
+        "encoded_bytes": 314633,
+        "rgba_bytes": 16777216
+      },
+      {
+        "width": 512,
+        "height": 512,
+        "encoded_bytes": 114662,
+        "rgba_bytes": 1048576
+      },
+      {
+        "width": 256,
+        "height": 256,
+        "encoded_bytes": 111762,
+        "rgba_bytes": 262144
+      },
+      {
+        "width": 2048,
+        "height": 2048,
+        "encoded_bytes": 565584,
+        "rgba_bytes": 16777216
+      },
+      {
+        "width": 512,
+        "height": 1024,
+        "encoded_bytes": 309474,
+        "rgba_bytes": 2097152
+      },
+      {
+        "width": 512,
+        "height": 1024,
+        "encoded_bytes": 6944,
+        "rgba_bytes": 2097152
+      },
+      {
+        "width": 512,
+        "height": 1024,
+        "encoded_bytes": 97368,
+        "rgba_bytes": 2097152
+      },
+      {
+        "width": 512,
+        "height": 1024,
+        "encoded_bytes": 163987,
+        "rgba_bytes": 2097152
+      },
+      {
+        "width": 512,
+        "height": 1024,
+        "encoded_bytes": 6944,
+        "rgba_bytes": 2097152
+      },
+      {
+        "width": 512,
+        "height": 1024,
+        "encoded_bytes": 97368,
+        "rgba_bytes": 2097152
+      },
+      {
+        "width": 2048,
+        "height": 2048,
+        "encoded_bytes": 2309592,
+        "rgba_bytes": 16777216
+      },
+      {
+        "width": 8,
+        "height": 8,
+        "encoded_bytes": 69,
+        "rgba_bytes": 256
+      },
+      {
+        "width": 256,
+        "height": 256,
+        "encoded_bytes": 14079,
+        "rgba_bytes": 262144
+      }
+    ],
+    "texture_rgba_bytes": 124257024
+  },
+  "config_bytes": 156
+}

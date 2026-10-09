@@ -1,137 +1,120 @@
-"""
-session_manager.py — Gestión de sesiones multi-turno con TTL y limpieza automática.
-
-Mejoras respecto al prototipo:
-  - asyncio.Lock para proteger el diccionario de sesiones de accesos concurrentes.
-  - Tarea de limpieza periódica en background (no depende de que llegue una petición).
-  - Método contar_sesiones() para el endpoint /health.
-"""
+"""Session service: opaque credentials, persisted ownership and local cancellation."""
 import asyncio
-import time
-from typing import Dict, List
+import hashlib
+import secrets
+import uuid
+from domain.errors import SessionError
+import anyio
+from persistence.runtime_repository import RuntimeConflict
+from persistence.sqlite_runtime_repository import SQLiteRuntimeRepository
+
+
+def token_digest(token):
+    return hashlib.sha256((token or '').encode()).hexdigest()
+
+
+from runtime_config import SessionSettings
+
+def runtime_path(): return SessionSettings.from_env().path
 
 
 class SessionManager:
-    def __init__(self, ttl: int = 90, cleanup_interval: int = 60) -> None:
-        self._sessions: Dict[str, dict] = {}
-        self._lock = asyncio.Lock()
-        self._ttl = ttl
+    def __init__(self, ttl=1800, cleanup_interval=60, repository=None):
+        config = SessionSettings.from_env()
+        self.repository = repository or SQLiteRuntimeRepository(config.path,
+            inactivity=ttl, lifetime=config.lifetime, max_turns=config.persisted_turns,
+            max_chars=config.history_chars, lease=config.request_lease)
         self._cleanup_interval = cleanup_interval
+        self.tasks = {}
 
-    async def obtener_o_crear(self, session_id: str) -> List[dict]:
-        """
-        Devuelve el historial de la sesión. Si la sesión expiró o no existe,
-        la reinicia limpia. La actualización de last_active se hace aquí.
-        """
-        async with self._lock:
-            ahora = time.time()
-            if session_id in self._sessions:
-                sesion = self._sessions[session_id]
-                # Sesión expirada: reiniciar sesión completa
-                if ahora - sesion["last_active"] > self._ttl:
-                    self._sessions[session_id] = {
-                        "history": [],
-                        "shown_media": [],
-                        "funnel_stage": "discovery",
-                        "lead_submitted": False,
-                        "last_active": ahora,
-                    }
-                else:
-                    sesion.setdefault("shown_media", [])
-                    sesion.setdefault("funnel_stage", "discovery")
-                    sesion.setdefault("lead_submitted", False)
-            else:
-                self._sessions[session_id] = {
-                    "history": [],
-                    "shown_media": [],
-                    "funnel_stage": "discovery",
-                    "lead_submitted": False,
-                    "last_active": ahora,
-                }
+    async def call(self, method, *args, **kwargs):
+        try:
+            return await asyncio.to_thread(getattr(self.repository, method), *args, **kwargs)
+        except RuntimeConflict as exc:
+            raise SessionError(exc.code, exc.status) from exc
 
-            self._sessions[session_id]["last_active"] = ahora
-            return self._sessions[session_id]["history"]
+    async def bootstrap(self, sid=None, token=None):
+        if token and sid:
+            await self.authorize(sid, token)
+            return {'session_id': sid, 'session_token': token}
+        sid = sid or uuid.uuid4().hex
+        token = secrets.token_urlsafe(32)
+        await self.call('create_session', sid, token_digest(token))
+        return {'session_id': sid, 'session_token': token}
 
-    async def obtener_sesion(self, session_id: str) -> dict:
-        """Retorna el diccionario completo de la sesión ({history, shown_media, funnel_stage, lead_submitted, last_active})."""
-        async with self._lock:
-            ahora = time.time()
-            if session_id in self._sessions:
-                sesion = self._sessions[session_id]
-                if ahora - sesion["last_active"] > self._ttl:
-                    self._sessions[session_id] = {
-                        "history": [],
-                        "shown_media": [],
-                        "funnel_stage": "discovery",
-                        "lead_submitted": False,
-                        "last_active": ahora,
-                    }
-                else:
-                    sesion.setdefault("shown_media", [])
-                    sesion.setdefault("funnel_stage", "discovery")
-                    sesion.setdefault("lead_submitted", False)
-            else:
-                self._sessions[session_id] = {
-                    "history": [],
-                    "shown_media": [],
-                    "funnel_stage": "discovery",
-                    "lead_submitted": False,
-                    "last_active": ahora,
-                }
-            self._sessions[session_id]["last_active"] = ahora
-            return self._sessions[session_id]
+    async def authorize(self, sid, token):
+        if not token or len(token) > 128:
+            raise SessionError('session_unauthorized', 401)
+        return await self.call('authorize', sid, token_digest(token))
 
-    async def actualizar_etapa_embudo(self, session_id: str, stage: str) -> None:
-        """Actualiza la etapa del embudo ('discovery', 'value', 'lead_captured', 'closing')."""
-        async with self._lock:
-            if session_id in self._sessions:
-                self._sessions[session_id]["funnel_stage"] = stage
+    async def begin(self, sid, persona, replace=False, key=None):
+        # Don't abandon a successful DB claim if the HTTP task disconnects while
+        # its SQLite worker is finishing the transaction.
+        pending = asyncio.create_task(self.call('begin', sid, persona, replace, key))
+        try:
+            rid, old = await asyncio.shield(pending)
+        except asyncio.CancelledError:
+            with anyio.CancelScope(shield=True):
+                rid, _ = await pending
+                await self.call('release', sid, rid)
+            raise
+        if old:
+            self._cancel_task(old)
+        return rid
 
-    async def registrar_lead_completado(self, session_id: str) -> None:
-        """Marca lead_submitted=True y funnel_stage='closing' tras registrar formulario."""
-        async with self._lock:
-            if session_id in self._sessions:
-                self._sessions[session_id]["lead_submitted"] = True
-                self._sessions[session_id]["funnel_stage"] = "closing"
+    def bind(self, rid):
+        self.tasks[rid] = asyncio.current_task()
 
-    async def registrar_medio_mostrado(self, session_id: str, resource_id: str) -> None:
-        """Registra un recurso visual mostrado en la sesión para evitar repeticiones."""
-        async with self._lock:
-            if session_id in self._sessions:
-                shown = self._sessions[session_id].setdefault("shown_media", [])
-                if resource_id not in shown:
-                    shown.append(resource_id)
+    def _cancel_task(self, rid):
+        task = self.tasks.get(rid)
+        if task and task is not asyncio.current_task() and not task.done():
+            task.get_loop().call_soon_threadsafe(task.cancel)
 
-    async def resetear(self, session_id: str) -> None:
-        """Elimina explícitamente una sesión (ej. tras reset manual del kiosco)."""
-        async with self._lock:
-            self._sessions.pop(session_id, None)
+    async def current(self, sid, rid):
+        await self.call('current', sid, rid)
 
-    async def contar_sesiones(self) -> int:
-        """Retorna el número de sesiones activas (para /health)."""
-        async with self._lock:
-            return len(self._sessions)
+    async def finish(self, sid, rid, question, answer, actions):
+        await self.call('finish', sid, rid, question, answer, actions)
 
-    async def limpiar_expiradas(self) -> int:
-        """Elimina las sesiones cuyo TTL ha vencido. Retorna la cantidad eliminada."""
-        async with self._lock:
-            ahora = time.time()
-            expiradas = [
-                sid
-                for sid, s in self._sessions.items()
-                if ahora - s["last_active"] > self._ttl
-            ]
-            for sid in expiradas:
-                del self._sessions[sid]
-            return len(expiradas)
+    async def release(self, sid, rid):
+        self.tasks.pop(rid, None)
+        with anyio.CancelScope(shield=True):
+            await self.call('release', sid, rid)
 
-    async def iniciar_limpieza_periodica(self) -> None:
-        """
-        Corrutina de larga duración que limpia sesiones expiradas cada
-        `cleanup_interval` segundos. Debe correrse como asyncio.Task en el lifespan.
-        """
+    async def watch_disconnect(self, sid, rid, request):
+        """JSON has no StreamingResponse task group to watch disconnects."""
         while True:
+            await asyncio.sleep(.5)
+            try:
+                await self.current(sid, rid)
+                if await request.is_disconnected():
+                    await self.cancel(sid, rid)
+                    return
+            except SessionError:
+                self._cancel_task(rid)
+                return
+
+    async def obtener_sesion(self, sid):
+        return await self.call('snapshot', sid)
+
+    async def cancel(self, sid, rid=None, reset=False, key=None):
+        result, old = await self.call('cancel', sid, rid, reset, key)
+        if old:
+            self._cancel_task(old)
+        return result
+
+    async def limpiar_expiradas(self):
+        rows = await self.call('cleanup')
+        for row in rows:
+            if row['active_request_id']:
+                self._cancel_task(row['active_request_id'])
+        return len(rows)
+
+    async def iniciar_limpieza_periodica(self):
+        while True:
+            try:
+                await self.limpiar_expiradas()
+            except Exception as exc:
+                from security.logging import safe_event
+                safe_event('session_cleanup_failed', error=exc)
             await asyncio.sleep(self._cleanup_interval)
-            eliminadas = await self.limpiar_expiradas()
-            if eliminadas > 0:
-                print(f"[Session GC] {eliminadas} sesión(es) expirada(s) eliminada(s).")

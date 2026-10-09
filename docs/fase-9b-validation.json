@@ -1,0 +1,87 @@
+{
+  "backend": {
+    "passed": true,
+    "tests": 226
+  },
+  "frontend": {
+    "passed": true,
+    "tests": 54
+  },
+  "admin_e2e": {
+    "passed": true,
+    "checks": 40
+  },
+  "public_e2e": {
+    "passed": true,
+    "checks": 18,
+    "rounds": 3
+  },
+  "production_and_backup": {
+    "passed": true,
+    "checks": [
+      {
+        "case": "consistent_identity_commercial_backup",
+        "passed": true
+      },
+      {
+        "case": "session_mode_valid",
+        "passed": true
+      },
+      {
+        "case": "insecure_cookie",
+        "passed": true
+      },
+      {
+        "case": "http_origin",
+        "passed": true
+      },
+      {
+        "case": "localhost_origin",
+        "passed": true
+      },
+      {
+        "case": "legacy_missing_token",
+        "passed": true
+      },
+      {
+        "case": "legacy_placeholder",
+        "passed": true
+      },
+      {
+        "case": "weak_argon",
+        "passed": true
+      },
+      {
+        "case": "eternal_session",
+        "passed": true
+      }
+    ]
+  },
+  "syntax": {
+    "passed": true,
+    "python_files": 115,
+    "javascript_files": 31
+  },
+  "secret_scan": {
+    "passed": true,
+    "files_checked": 231,
+    "findings": []
+  },
+  "rag_check": {
+    "status": "ready"
+  },
+  "build": {
+    "passed": true,
+    "warning": "Existing Three.js 610.23 kB chunk"
+  },
+  "public_price_from_panel": true,
+  "production_data_modified": false,
+  "next_phase_started": false,
+  "rag_evaluation": {
+    "passed": true,
+    "cases": 12
+  },
+  "git_diff_check": {
+    "passed": true
+  }
+}

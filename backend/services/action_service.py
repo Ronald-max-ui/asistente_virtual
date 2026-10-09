@@ -3,18 +3,19 @@ from dataclasses import dataclass, field
 from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field, StrictStr, TypeAdapter, ValidationError
 from services.consent_service import autorizar_accion, normalizar, accion_disponible
+from security.config import MAX_ACTIONS, MAX_COMMERCIAL
 from services.media_registry import obtener_recurso
-from services.pricing_service import consultar_tarifa, normalizar_programa, programa_canonico, CONCEPTOS, pricing_service, conceptos_en_texto, variantes_en_contexto, CatalogError, aviso_pago_bloqueado
+from services.pricing_service import CONCEPTOS, pricing_service, conceptos_en_texto, variantes_en_contexto, CatalogError, aviso_pago_bloqueado
 
 class ActionRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", str_max_length=2000)
 
 class ShowPayment(ActionRequest):
     type: Literal["show_payment"]
-    program: StrictStr = Field(description="ID de programa del catálogo autorizado")
-    concept: StrictStr = Field(description="Concepto del catálogo autorizado; nunca un importe")
-    modality: StrictStr | None = None
-    shift: StrictStr | None = None
+    program: StrictStr = Field(description="ID de programa del catálogo autorizado", max_length=MAX_COMMERCIAL)
+    concept: StrictStr = Field(description="Concepto del catálogo autorizado; nunca un importe", max_length=64)
+    modality: StrictStr | None = Field(default=None, max_length=64)
+    shift: StrictStr | None = Field(default=None, max_length=64)
 
 class ShowContact(ActionRequest):
     type: Literal["show_contact"]
@@ -89,10 +90,11 @@ class ActionResult:
     actions: list = field(default_factory=list)
     notices: list = field(default_factory=list)
 
-def herramientas_llm(*, mode=None, persona=None, lead_submitted=False) -> list:
+def herramientas_llm(*, mode=None, persona=None, lead_submitted=False, pricing=None) -> list:
+    pricing = pricing or pricing_service
     tools = []
     try:
-        programs = list(pricing_service.catalogs())
+        programs = list(pricing.catalogs())
     except CatalogError:
         programs = []
     for model, description in [(ShowPayment, "Solicitar pago; el backend decide la tarifa."), (ShowContact, "Solicitar formulario de contacto."), (ShowGallery, "Solicitar una imagen del catálogo.")]:
@@ -109,22 +111,23 @@ def herramientas_llm(*, mode=None, persona=None, lead_submitted=False) -> list:
         tools.append({"type": "function", "function": {"name": name, "description": description, "parameters": schema}})
     return tools
 
-def procesar_acciones(requests: list, context: ActionContext) -> ActionResult:
+def procesar_acciones(requests: list, context: ActionContext, *, pricing=None) -> ActionResult:
+    pricing = pricing or pricing_service
     result = ActionResult()
     seen = set()
-    for raw in requests:
+    for raw in requests[:MAX_ACTIONS]:
         try:
             request = REQUEST_SCHEMA.validate_python(raw)
             if request.type in ("show_contact", "show_payment") and request.program is not None:
-                request.program = normalizar_programa(request.program)
+                request.program = pricing.normalize_program(request.program)
             if request.type == "show_payment":
                 request.concept = normalizar(request.concept).replace(" ", "_")
                 if request.concept not in CONCEPTOS:
                     continue
-                explicit_program = programa_canonico(context.pregunta)
+                explicit_program = pricing.detect_program(context.pregunta)
                 if not explicit_program:
                     previous = next((t.get("content", "") for t in reversed(context.historial) if t.get("role") == "assistant"), "")
-                    explicit_program = programa_canonico(previous)
+                    explicit_program = pricing.detect_program(previous)
                 if explicit_program and explicit_program != request.program:
                     continue
                 concepts = conceptos_en_texto(context.pregunta)
@@ -136,14 +139,14 @@ def procesar_acciones(requests: list, context: ActionContext) -> ActionResult:
             if not autorizar_accion(_CONSENT_TYPES[request.type], context.pregunta, context.historial, mode=context.mode, persona=context.persona, lead_submitted=context.lead_submitted):
                 continue
             if request.type == "show_payment":
-                catalog = pricing_service.catalogs()[request.program]
+                catalog = pricing.catalogs()[request.program]
                 modality, shift = variantes_en_contexto(catalog, context.pregunta, context.historial)
                 if modality and request.modality and normalizar(request.modality).replace(" ", "_") != modality:
                     continue
                 if shift and request.shift and normalizar(request.shift).replace(" ", "_") != shift:
                     continue
-                tariff = consultar_tarifa(request.program, request.concept, request.modality or modality, request.shift or shift)
-                notice = aviso_pago_bloqueado(tariff)
+                tariff = pricing.resolve(request.program, request.concept, request.modality or modality, request.shift or shift)
+                notice = aviso_pago_bloqueado(tariff, service=pricing)
                 if notice:
                     if notice not in result.notices:
                         result.notices.append(notice)
@@ -161,7 +164,7 @@ def procesar_acciones(requests: list, context: ActionContext) -> ActionResult:
                     continue
                 action = {"type": request.type, "resource_id": request.resource_id, "resource": obtener_recurso(request.resource_id)}
             else:
-                label = consultar_tarifa(request.program, "inscripcion")["program_label"] if request.program else ""
+                label = pricing.resolve(request.program, "inscripcion")["program_label"] if request.program else ""
                 action = {"type": request.type, "program": request.program, "program_label": label}
             action = AUTHORIZED_ACTION_SCHEMA.validate_python(action).model_dump(mode="json")
             key = str(action)
@@ -172,14 +175,15 @@ def procesar_acciones(requests: list, context: ActionContext) -> ActionResult:
             continue  # No registrar argumentos crudos del LLM.
     return result
 
-def texto_respaldo(result: ActionResult) -> str:
+def texto_respaldo(result: ActionResult, *, pricing=None) -> str:
+    pricing = pricing or pricing_service
     if result.notices:
         return result.notices[0]["message"]
     if not result.actions:
         return ""
     action = result.actions[0]
     if action["type"] == "show_payment":
-        return pricing_service.text_for_price(action) + " Puedes enviar el comprobante para solicitar su verificación; el envío no confirma una matrícula."
+        return pricing.text_for_price(action) + " Puedes enviar el comprobante para solicitar su verificación; el envío no confirma una matrícula."
     if action["type"] == "show_contact":
         return "Aquí tienes el formulario para registrar tus datos de contacto."
     return "Aquí tienes la imagen solicitada en tu pantalla."
@@ -197,3 +201,9 @@ def validar_accion(tipo: str, params: list, pregunta: str, historial: list, *, m
     if action["type"] == "show_contact":
         return [action["program_label"]]
     return [action["program_label"], action["amount"], action["concept"]]
+
+class ActionService:
+    def __init__(self, pricing): self.pricing = pricing
+    def process(self, requests, context):
+        return procesar_acciones(requests, context, pricing=self.pricing)
+    def fallback(self, result): return texto_respaldo(result, pricing=self.pricing)

@@ -1,0 +1,17 @@
+{
+  "fixed_phrase": true,
+  "samples": [
+    {
+      "voice_id": "es-PE-CamilaNeural",
+      "ok": true,
+      "bytes": 19440,
+      "duration_ms": 1547
+    },
+    {
+      "voice_id": "es-PE-AlexNeural",
+      "ok": true,
+      "bytes": 22752,
+      "duration_ms": 1457
+    }
+  ]
+}

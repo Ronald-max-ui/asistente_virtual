@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "checks": [
+    "login_ui",
+    "me_superadmin",
+    "cookie_httponly",
+    "cookie_inaccessible_js",
+    "csrf_missing_rejected",
+    "read_modify_audit",
+    "logout_invalidates",
+    "readonly_mutation_403",
+    "no_admin_credentials_in_storage"
+  ]
+}

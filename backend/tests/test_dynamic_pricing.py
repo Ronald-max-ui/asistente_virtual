@@ -144,7 +144,7 @@ class DynamicPricingTests(unittest.TestCase):
             self.assertEqual(module.respuesta_comercial("¿Cuánto dura Gastronomía?"), "")
 
     def test_routes_and_vouchers_revalidate_edits_without_restart_or_rag_refresh(self):
-        server = load_server()
+        server = load_server(pricing=self.service)
         request = {"type":"show_payment", "program":"gastronomia", "concept":"inscripcion"}
         async def chunks():
             # Viejo contenido vectorial/modelo intenta imponer otro importe.

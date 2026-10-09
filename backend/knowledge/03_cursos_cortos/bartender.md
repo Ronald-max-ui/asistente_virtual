@@ -4,68 +4,46 @@ tipo: "curso_corto"
 categoria: "03_cursos_cortos"
 titulo: "Curso Profesional de Bartender"
 tags: ["bartender", "cocteleria", "mixologia", "flair", "mocktails", "curso_corto", "sabados", "certificado", "emprendimiento"]
-inicio_clases: "2026-11-15"
-duracion: "3 meses"
-modalidad: ["presencial"]
 ---
 
-# Curso Profesional: Bartender — Mixología y Coctelería
+# Curso Profesional de Bartender
 
-## Ficha Técnica
+## Descripción
 
-- **Certificación otorgada:** Certificado en Bartender Profesional — Mixología, Flair y Coctelería Moderna, emitido por el Instituto Tuinen Star (institución licenciada por el MINEDU).
-- **Nivel:** Curso de especialización práctica. Al culminar se obtiene **certificación institucional**, NO un Título Profesional Técnico.
-- **Duración:** 3 meses
-- **Inicio oficial:** 15 de noviembre
-- **Requisitos previos:** Ninguno. No se necesita experiencia previa; está diseñado para aprender desde cero o perfeccionar técnicas.
+Curso de especialización práctica en mixología, flair y coctelería moderna. Está diseñado para aprender desde cero o perfeccionar técnicas; no exige experiencia previa.
 
-## Modalidad, Horarios y Sede
+## Duración
 
-- **Modalidad:** 100% presencial y práctica desde la primera sesión
-- **Frecuencia:** Exclusivamente los días **sábados**
-- **No disponible** en modalidad virtual ni a distancia
+La duración declarada es de 3 meses. El calendario de cada edición se confirma con admisión.
 
-| Turno | Horario |
-|---|---|
-| Mañana | Sábados de 9:00 a.m. a 12:00 p.m. |
-| Tarde | Sábados de 3:00 p.m. a 6:00 p.m. |
+## Modalidades
 
-**Lugar de clases:** Sede Principal de San Sebastián (Calle Bellavista N.º 130 y 140, Cusco).
+- **Presencial:** formación práctica desde la primera sesión, en la sede académica del instituto.
 
-## Información comercial vigente
+No se ofrece en modalidad virtual ni a distancia. Puede tener clases o actividades los sábados. Los turnos, horarios y fechas de inicio se confirman para esta edición del curso.
 
-La única fuente de tarifas, campañas y promociones de este programa es [bartender.pricing.json](bartender.pricing.json).
-Lía consulta PricingService directamente; los importes no dependen del índice vectorial.
-No copies precios a este Markdown. Un estado `pending` no significa gratuito.
+## Qué aprenderás
 
-**Cupos estrictamente limitados** por turno. Se asignan por orden de matrícula.
+- Mixología moderna y coctelería de autor.
+- Coctelería clásica e internacional.
+- Flair bartending: técnicas de exhibición y servicio.
+- Mocktails: coctelería y bebidas sin alcohol.
+- Técnicas profesionales de preparación y presentación de cocteles.
+- Administración de bares, costeo de bebidas y control de inventarios.
+- Estrategias de emprendimiento y apertura de negocios de coctelería.
 
-**Requisitos para inscribirse:**
-- Copia del DNI
-- Ficha de inscripción completada
-- Pago de matrícula para reservar vacante
-
-
-## Contenido Temático
-
-El curso desarrolla competencias prácticas y de gestión:
-
-- Mixología moderna y coctelería de autor
-- Coctelería clásica e internacional
-- Flair bartending (técnicas de exhibición y servicio)
-- Mocktails (coctelería y bebidas sin alcohol)
-- Técnicas profesionales de preparación y presentación de cocteles
-- Administración de bares, costeo de bebidas y control de inventarios
-- Estrategias de emprendimiento y apertura de negocios de coctelería
-
-## Beneficios Incluidos
-
-- Insumos para todas las sesiones prácticas
-- **Delantal profesional de barman**
-- **Recetario oficial de coctelería**
-- **Sesión fotográfica profesional** para portafolio personal
-- Docentes con experiencia en el rubro gastronómico y hotelero
-
-## Campo Laboral
+## Campo laboral
 
 El egresado puede desempeñarse en bares, cadenas hoteleras, restaurantes, empresas de eventos sociales y corporativos, discotecas, cruceros o emprendimientos propios de coctelería.
+
+## Requisitos
+
+No se necesita experiencia previa. La ficha del curso indica copia del DNI y ficha de inscripción completada para inscribirse. La reserva de vacante se gestiona según [admisión y pagos](../01_institucional/admision_y_pagos.md).
+
+## Información adicional
+
+Al culminar el curso se obtiene el Certificado en Bartender Profesional — Mixología, Flair y Coctelería Moderna, emitido por el Instituto Tuinen Star. Es una certificación institucional, no un Título Profesional Técnico.
+
+Los beneficios documentados incluyen insumos para las sesiones prácticas, delantal profesional de barman, recetario oficial de coctelería, sesión fotográfica para portafolio personal y docentes con experiencia en el rubro gastronómico y hotelero.
+
+Los cupos por turno se asignan por orden de matrícula; la disponibilidad actual debe confirmarse. La ubicación y contacto se encuentran en la [información institucional](../01_institucional/general.md).

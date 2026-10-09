@@ -1,0 +1,19 @@
+{
+  "python_syntax": 110,
+  "javascript_syntax": 26,
+  "secret_scan": {
+    "passed": true,
+    "files_checked": 212,
+    "findings": []
+  },
+  "git_diff_check": true,
+  "backend_tests": 213,
+  "frontend_tests": 44,
+  "admin_e2e": true,
+  "public_e2e": true,
+  "clean_install": true,
+  "rag_check": "ready",
+  "rag_evaluation": true,
+  "production_validation": true,
+  "backup_check": "passed_in_temporary_databases"
+}

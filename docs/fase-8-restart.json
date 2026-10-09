@@ -1,0 +1,21 @@
+{
+  "passed": true,
+  "checks": [
+    "completed_turn",
+    "lead_created",
+    "voucher_created",
+    "session_credential_recovered",
+    "commercial_avatar_config_recovered",
+    "index_ready_after_restart",
+    "incomplete_turn_not_committed",
+    "orphan_lease_visible",
+    "explicit_replace_recovers_orphan",
+    "lead_association_recovered",
+    "lead_retry_idempotent_after_restart",
+    "voucher_retry_idempotent_after_restart",
+    "voucher_association_status_recovered",
+    "voucher_image_recovered",
+    "reset_after_restart",
+    "reset_preserves_commercial_data"
+  ]
+}

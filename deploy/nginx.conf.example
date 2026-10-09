@@ -1,0 +1,56 @@
+# Place this map in the http context, before the server blocks.
+map $uri $lia_cache_control {
+    default "no-cache";
+    ~^/(api|admin|chat|reset-session|health|static)(/|$) "";
+    ~^/assets/ "public, max-age=31536000, immutable";
+}
+# Single instance, same-origin deployment. Replace host, certificate and root.
+# Validate with nginx -t. No Docker/Brotli module requirement.
+server {
+    listen 80;
+    server_name lia.example.org;
+    return 301 https://$host$request_uri;
+}
+server {
+    listen 443 ssl;
+    server_name lia.example.org;
+    ssl_certificate /etc/lia/tls/fullchain.pem;
+    ssl_certificate_key /etc/lia/tls/privkey.pem;
+    root /srv/lia/current/avatar-kiosk/dist;
+    client_max_body_size 6m;
+    add_header X-Content-Type-Options nosniff always;
+    add_header X-Frame-Options DENY always;
+    add_header Referrer-Policy no-referrer always;
+    add_header Permissions-Policy "microphone=(self), camera=(), geolocation=(), payment=()" always;
+    add_header Strict-Transport-Security "max-age=31536000" always;
+    # Inline styles are used by existing overlays/Three UI. No inline scripts/eval.
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; font-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" always;
+    add_header Cache-Control $lia_cache_control always;
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types application/javascript text/css application/json image/svg+xml;
+    # Optional only when the installed Nginx has the Brotli module:
+    # brotli on;
+    # brotli_types application/javascript text/css application/json image/svg+xml;
+    location ~ ^/(api(?:/|$)|admin(?:/|$)|chat(?:/|$)|reset-session$|health(?:/|$)|static/) {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_read_timeout 110s;
+        # Preserve backend CSP for API; frontend policy above is for HTML/assets.
+        proxy_hide_header Content-Security-Policy;
+        # Do not log request bodies or headers, including Authorization.
+    }
+    # Parent headers remain inherited (do not add_header in child locations).
+    location /assets/ {
+        try_files $uri =404;
+    }
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}

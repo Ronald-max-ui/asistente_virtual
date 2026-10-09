@@ -203,3 +203,24 @@ body, html {
 @media (max-width: 480px) {
   #mode-switch .ms-opt { padding: 6px 9px; font-size: 11px; }
 }
+/* Accessible alternative controls; existing avatar and palette preserved. */
+.sr-only {position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
+[hidden] {display:none !important;}
+#text-form {display:flex;gap:8px;max-width:440px;width:min(90vw,440px);margin-top:10px;}
+#text-message {min-width:0;flex:1;border:1px solid #7c6cf0;border-radius:12px;padding:10px;background:#1a1a2e;color:#fff;font:inherit;}
+#text-send,#stop-btn,#retry-start {border:1px solid #7c6cf0;border-radius:12px;padding:9px 12px;background:#1a1a2e;color:white;cursor:pointer;}
+#capability-notice {max-width:440px;font-size:13px;color:#eee;text-align:center;margin:6px;}
+button:focus-visible,input:focus-visible,textarea:focus-visible {outline:3px solid #c1baff;outline-offset:3px;}
+button:disabled {opacity:.6;cursor:default;}
+
+#status-badge {max-width:min(90vw,440px);text-align:center;}
+input,textarea {user-select:text;}
+
+/* Optional institution branding; configured color keeps deterministic readable text. */
+#assistant-brand{position:fixed;top:18px;left:18px;z-index:10;display:flex;align-items:center;gap:10px;color:white;max-width:45%;font-size:16px;pointer-events:none}
+#assistant-logo{max-width:100px;max-height:48px;object-fit:contain}
+#assistant-logo[hidden]{display:none}
+html[data-branding=configured] #text-send,html[data-branding=configured] #retry-start{background:var(--assistant-primary);color:var(--assistant-on-primary);border-color:var(--assistant-primary)}
+html[data-branding=configured] #text-message:focus-visible{outline:2px solid var(--assistant-primary)}
+
+#assistant-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

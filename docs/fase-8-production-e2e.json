@@ -1,0 +1,37 @@
+{
+  "passed": true,
+  "checks": [
+    "session_bootstrap_text_ready",
+    "failed_avatar_keeps_conversation",
+    "favicon_available",
+    "text_audio_response",
+    "cancel_then_ready",
+    "tts_failure_text_continues",
+    "llm_failure_recovers",
+    "accessible_lead_dialog",
+    "lead_registered",
+    "escape_closes_dialog",
+    "active_upload_blocks_escape",
+    "voucher_pending_review",
+    "conversation_reset",
+    "browser_freeze_resume",
+    "offline_online_controls_recover",
+    "avatar_change_reload",
+    "production_build_csp",
+    "narrow_viewport_layout"
+  ],
+  "rounds": 5,
+  "mode": "web",
+  "heap_samples": [
+    {
+      "round": 0,
+      "bytes": 4005417
+    }
+  ],
+  "native_voice_available": true,
+  "elapsed_seconds": 6.023,
+  "responsive_layout": {
+    "contained": true,
+    "caption_above": true
+  }
+}

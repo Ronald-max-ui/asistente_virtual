@@ -1,0 +1,29 @@
+{
+  "passed": true,
+  "checks": [
+    "session_bootstrap_text_ready",
+    "failed_avatar_keeps_conversation",
+    "favicon_available",
+    "text_audio_response",
+    "cancel_then_ready",
+    "tts_failure_text_continues",
+    "llm_failure_recovers",
+    "accessible_lead_dialog",
+    "lead_registered",
+    "escape_closes_dialog",
+    "voucher_pending_review",
+    "conversation_reset",
+    "browser_freeze_resume",
+    "offline_online_controls_recover"
+  ],
+  "rounds": 5,
+  "mode": "web",
+  "heap_samples": [
+    {
+      "round": 0,
+      "bytes": 18907460
+    }
+  ],
+  "native_voice_available": true,
+  "elapsed_seconds": 5.648
+}

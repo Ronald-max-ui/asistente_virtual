@@ -4,78 +4,55 @@ tipo: "carrera_tecnica"
 categoria: "02_carreras"
 titulo: "Guía Oficial de Turismo"
 tags: ["turismo", "guia", "viajes", "cultura", "patrimonio", "japones", "ingles", "costos", "horarios", "presencial", "virtual", "salidas_campo"]
-inicio_clases: "2026-10-05"
-duracion: "2 años y medio"
-ciclos: 6
-modalidad: ["presencial", "virtual"]
 ---
 
-# Carrera Profesional Técnica: Guía Oficial de Turismo
+# Guía Oficial de Turismo
 
-## Ficha Técnica
+## Descripción
 
-- **Título otorgado:** Título Profesional Técnico en Guía Oficial de Turismo a Nombre de la Nación
-- **Duración:** 2 años y medio (6 ciclos académicos de 17 semanas / 4 meses y medio cada uno)
-- **Inicio de clases:** 5 de octubre de 2026
-- **Perfil:** Formación práctica y teórica para guiar e interpretar atractivos turísticos, gestionar servicios turísticos y trabajar con cultura, historia y patrimonio del destino Cusco y el Perú.
+La carrera ofrece formación práctica y teórica para guiar e interpretar atractivos turísticos, gestionar servicios turísticos y trabajar con la cultura, historia y patrimonio del Cusco y el Perú.
 
-## Modalidades y Horarios
+## Duración
 
-### Modalidad Presencial
+La duración declarada es de 2 años y medio, organizada en 6 ciclos académicos. El calendario de cada periodo se confirma con admisión.
 
-| Turno | Días | Horario |
-|---|---|---|
-| Mañana | Lunes a viernes | 7:00 a.m. a 11:30 a.m. |
-| Tarde | Lunes a viernes | (consultar disponibilidad por ciclo) |
+## Modalidades
 
-**Lugar:** Sede Principal de San Sebastián (Calle Bellavista N.º 130 y 140, Cusco).
+- **Presencial:** formación en la sede académica del instituto.
+- **Virtual:** clases en vivo y gestión académica mediante las plataformas descritas en la [información institucional](../01_institucional/general.md).
 
-### Modalidad Virtual
+Los turnos, horarios y fechas de inicio se confirman para este programa y periodo. La disponibilidad de un turno no se deduce de la oferta de otras carreras.
 
-| Turno | Días | Horario |
-|---|---|---|
-| Noche | Lunes a viernes | 6:30 p.m. a 9:30 p.m. |
+## Qué aprenderás
 
-Clases en vivo por Google Meet (grabadas para repaso). Gestión académica por plataforma Q10.
+La carrera incluye formación integrada en inglés y japonés, con certificaciones progresivas según el nivel alcanzado. Es la única carrera del instituto con formación en japonés.
 
-## Información comercial vigente
+La formación práctica comienza desde el primer ciclo e incluye:
 
-La única fuente de tarifas, campañas y promociones de este programa es [turismo.pricing.json](turismo.pricing.json).
-Lía consulta PricingService directamente; los importes no dependen del índice vectorial.
-No copies precios a este Markdown. Un estado `pending` no significa gratuito.
+- Salidas de campo y visitas académicas.
+- Recorridos turísticos guiados y visitas a museos.
+- Caminatas interpretativas y actividades de turismo alternativo y aventura.
+- Estudio de atractivos naturales y recursos culturales del Cusco.
 
+Las áreas de especialización comprenden turismo cultural e histórico, turismo de naturaleza y medio ambiente, turismo alternativo y de aventura, técnicas de comunicación, guiado e interpretación, y gestión de servicios turísticos.
 
-## Diferenciador Exclusivo: Formación en Idiomas
-
-Esta carrera incluye formación integrada en **dos idiomas**:
-
-- **Inglés** — con certificaciones progresivas según nivel alcanzado
-- **Japonés** — con certificaciones progresivas según nivel alcanzado
-
-Es la única carrera del instituto con formación en japonés.
-
-## Formación Práctica desde el Primer Ciclo
-
-- **Salidas de campo** y visitas académicas desde el primer ciclo
-- Recorridos turísticos guiados y visitas a museos
-- Caminatas interpretativas y actividades de turismo alternativo y aventura
-- Atractivos naturales y recursos culturales del Cusco
-
-### Áreas de Especialización
-
-- Turismo cultural e histórico
-- Turismo de naturaleza y medio ambiente
-- Turismo alternativo y de aventura
-- Técnicas de comunicación, guiado e interpretación
-- Gestión de servicios turísticos
-
-## Campo Laboral
+## Campo laboral
 
 El egresado puede desempeñarse en:
 
-- Agencias de viajes y turismo
-- Empresas operadoras de turismo receptivo y emisivo
-- Hoteles y cadenas de hospedaje
-- Museos y centros de interpretación cultural o natural
-- Empresas de servicios y transporte turístico
-- Creación y desarrollo de emprendimientos turísticos propios
+- Agencias de viajes y turismo.
+- Empresas operadoras de turismo receptivo y emisivo.
+- Hoteles y cadenas de hospedaje.
+- Museos y centros de interpretación cultural o natural.
+- Empresas de servicios y transporte turístico.
+- Creación y desarrollo de emprendimientos turísticos propios.
+
+## Requisitos
+
+Los requisitos documentales generales se encuentran en [admisión y requisitos](../01_institucional/admision_y_pagos.md).
+
+## Información adicional
+
+El título otorgado es el Título Profesional Técnico en Guía Oficial de Turismo a Nombre de la Nación, sujeto al cumplimiento de los requisitos académicos y administrativos.
+
+La ubicación, contacto y beneficios comunes se encuentran en la [información institucional](../01_institucional/general.md). Las condiciones comerciales vigentes se consultan según lo indicado en [pagos](../01_institucional/admision_y_pagos.md).

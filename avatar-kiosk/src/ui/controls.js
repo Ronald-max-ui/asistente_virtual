@@ -1,3 +1,4 @@
+import { setAssistantState, assistantState, setConnected, setVoiceAvailable, canSend } from './state.js';
 /**
  * ui/controls.js — Interfaz de usuario: micrófono, badges y SpeechRecognition.
  *
@@ -9,7 +10,7 @@
  *  - Delegar la petición al backend a api/client.js.
  */
 
-import { consultarAsistente } from '../api/client.js';
+import { consultarAsistente, cancelarInteraccion } from '../api/client.js';
 import { dispararSaludo, setIsListening, registrarActividad } from '../avatar/animator.js';
 import { isCurrentlySpeaking, unlockAudio } from '../audio/player.js';
 
@@ -18,10 +19,27 @@ import { isCurrentlySpeaking, unlockAudio } from '../audio/player.js';
  * Debe llamarse desde main.js después de que el DOM esté listo.
  */
 export function initControls(mode = 'web') {
-  const statusBadge = document.getElementById('status-badge');
+  disposeControls();
   const micBtn = document.getElementById('mic-btn');
   const subtitles = document.getElementById('subtitles');
 
+  const form=document.getElementById('text-form');
+  const input=document.getElementById('text-message');
+  const stop=document.getElementById('stop-btn');
+  const notice=document.getElementById('capability-notice');
+  const textEnabled=mode==='web' || window.__liaPublicConfig?.visual?.kiosk_text_enabled===true;
+  if(form) form.hidden=!textEnabled;
+  const send=(event)=>{event.preventDefault();if(!canSend() || !input?.value.trim()) return;unlockAudio();
+    const text=input.value.trim();input.value='';detenerReconocimiento();void consultarAsistente(text);};
+  const cancel=()=>{detenerReconocimiento();void cancelarInteraccion();};
+  const offline=()=>{detenerReconocimiento();void cancelarInteraccion();setConnected(false);};
+  const online=()=>setConnected(true);
+  form?.addEventListener('submit',send);stop?.addEventListener('click',cancel);
+  window.addEventListener('offline',offline);window.addEventListener('online',online);
+  _removeAlternativeListeners=()=>{form?.removeEventListener('submit',send);stop?.removeEventListener('click',cancel);
+    window.removeEventListener('offline',offline);window.removeEventListener('online',online);};
+  setConnected(window.navigator?.onLine!==false);
+  const voiceUnavailable=(message)=>{setVoiceAvailable(false);if(form) form.hidden=false;if(notice) notice.textContent=message;};
   // Registrar actividad con cualquier interacción táctil o de teclado
   window.addEventListener('pointerdown', registrarActividad);
   window.addEventListener('keydown', registrarActividad);
@@ -31,7 +49,7 @@ export function initControls(mode = 'web') {
 
   if (!SpeechRecognitionAPI) {
     console.warn('[ui/controls] SpeechRecognition no disponible en este navegador.');
-    statusBadge.textContent = 'Navegador no compatible con voz';
+    voiceUnavailable('La voz no está disponible en este navegador. Puedes escribir tu pregunta.');
     return;
   }
 
@@ -49,8 +67,7 @@ export function initControls(mode = 'web') {
     isListening = true;
     setIsListening(true);
     micBtn.classList.add('active');
-    statusBadge.textContent = 'Escuchando...';
-    statusBadge.className = 'listening';
+    setAssistantState('listening');
   };
 
   recognition.onspeechstart = () => {
@@ -64,11 +81,11 @@ export function initControls(mode = 'web') {
   };
 
   recognition.onresult = (event) => {
+    if(!['ready','listening','error'].includes(assistantState())) return;
     registrarActividad();
     const textoDetectado = event.results[0][0].transcript;
     subtitles.textContent = `"${textoDetectado}"`;
-    statusBadge.textContent = 'Consultando...';
-    statusBadge.className = 'thinking';
+    setAssistantState('processing');
 
     // Disparar animación de saludo si el usuario saluda
     if (saludoRegex.test(textoDetectado)) {
@@ -78,23 +95,22 @@ export function initControls(mode = 'web') {
     consultarAsistente(textoDetectado);
   };
 
-  recognition.onerror = () => {
+  recognition.onerror = (event) => {
     isListening = false;
     setIsListening(false);
     micBtn.classList.remove('active');
-    statusBadge.textContent = 'Toca el micrófono para hablar';
-    statusBadge.className = '';
+    if(['not-allowed','service-not-allowed','audio-capture'].includes(event?.error)) {
+      voiceUnavailable('El micrófono no está disponible. Puedes escribir sin volver a conceder permiso.');
+      try {recognition.abort();} catch (_) {}
+    }
+    if(assistantState()==='listening') setAssistantState('ready');
   };
 
   recognition.onend = () => {
     isListening = false;
     setIsListening(false);
     micBtn.classList.remove('active');
-    // Solo resetear el badge si no estamos esperando respuesta del backend
-    if (statusBadge.className !== 'thinking') {
-      statusBadge.textContent = 'Toca el micrófono para hablar';
-      statusBadge.className = '';
-    }
+    if(assistantState()==='listening') setAssistantState('ready');
   };
 
   // ── Botón de micrófono: Desbloqueo de audio y soporte táctil para iOS ─────
@@ -108,14 +124,15 @@ export function initControls(mode = 'web') {
     unlockAudio();
 
     // 2. Control de estado del avatar y SpeechRecognition
-    if (isCurrentlySpeaking()) return;
+    if (isCurrentlySpeaking() || (!isListening && !canSend())) return;
 
     if (!isListening) {
       dispararSaludo(); // Saludo de bienvenida al tocar el micrófono
       try {
         recognition.start();
       } catch (recErr) {
-        console.warn('[ui/controls] Error al iniciar recognition:', recErr);
+        console.warn('[ui/controls] No se pudo iniciar la voz.');
+        voiceUnavailable('No se pudo iniciar la voz. Puedes escribir tu pregunta.');
       }
     } else {
       recognition.stop();
@@ -127,6 +144,10 @@ export function initControls(mode = 'web') {
   micBtn.addEventListener('click', manejarInteraccionMic);
 
   _recognitionInstance = recognition;
+  _removeMicListeners = () => {
+    micBtn.removeEventListener('touchstart', manejarInteraccionMic);
+    micBtn.removeEventListener('click', manejarInteraccionMic);
+  };
 }
 
 let _recognitionInstance = null;
@@ -149,4 +170,20 @@ export function detenerReconocimiento() {
  */
 export function reactivarReconocimiento() {
   // En modo quiosco o si se desea reactivar, se puede invocar de forma controlada
+}
+
+let _removeMicListeners = null;
+let _removeAlternativeListeners = null;
+export function disposeControls() {
+  _removeAlternativeListeners?.();_removeAlternativeListeners=null;
+  window.removeEventListener('pointerdown', registrarActividad);
+  window.removeEventListener('keydown', registrarActividad);
+  _removeMicListeners?.(); _removeMicListeners = null;
+  if (_recognitionInstance) {
+    _recognitionInstance.onstart = _recognitionInstance.onresult = null;
+    _recognitionInstance.onspeechstart = _recognitionInstance.onspeechend = null;
+    _recognitionInstance.onerror = _recognitionInstance.onend = null;
+    try { _recognitionInstance.abort(); } catch (_) {}
+    _recognitionInstance = null;
+  }
 }

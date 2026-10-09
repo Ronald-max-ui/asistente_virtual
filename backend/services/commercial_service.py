@@ -1,7 +1,8 @@
 """Reglas administrativas independientes del motor de persistencia."""
 from datetime import date
+from domain.revision import check_revision
 from persistence.models import ProgramRecord, PriceRecord, CampaignRecord, AvatarRecord, SettingsRecord
-from services.pricing_service import ProgramCatalog, CONCEPTOS
+from domain.pricing import ProgramCatalog, CONCEPTOS
 from services.consent_service import normalizar
 
 MODELS = {'programs': ProgramRecord, 'prices': PriceRecord, 'campaigns': CampaignRecord, 'avatars': AvatarRecord}
@@ -69,10 +70,13 @@ class CommercialService:
         with self.repository.transaction() as unit:
             return unit.get(resource, identifier)
 
-    def save(self, resource, data, actor='admin-token', *, create=False):
+    def save(self, resource, data, actor='admin-token', *, create=False, request_id='internal', expected=None):
         model = MODELS[resource].model_validate(data)
         with self.repository.transaction(write=True) as unit:
-            if create and unit.get(resource, model.id):
+            previous = unit.get(resource, model.id)
+            check_revision(previous, expected)
+            previous_settings = unit.settings() if resource == 'avatars' else None
+            if create and previous:
                 raise ConfigurationConflict('El identificador ya existe')
             if resource == 'avatars' and model.active and not model.enabled:
                 raise ConfigurationConflict('Un avatar deshabilitado no puede estar activo')
@@ -84,15 +88,24 @@ class CommercialService:
                 if selected is None:
                     raise ConfigurationConflict('Selecciona otro avatar antes de desactivar el avatar activo')
                 unit.save_settings({'active_avatar_id': selected}, actor)
+                unit.audit(actor, 'settings.avatar', 'settings', 'general', previous_settings, unit.settings(), request_id)
+            unit.audit(actor, resource + '.save', resource, model.id, previous, result, request_id)
             return result
 
     def settings(self):
         with self.repository.transaction() as unit:
             return unit.settings()
 
-    def save_settings(self, data, actor='admin-token'):
+    def save_settings(self, data, actor='admin-token', *, request_id='internal', expected=None):
         model = SettingsRecord.model_validate(data)
         with self.repository.transaction(write=True) as unit:
+            previous = unit.settings()
+            for purpose,url in [('logo',model.logo_url),('favicon',model.favicon_url)]:
+                if url and url.startswith('/static/branding/'):
+                    # Same unit: keep reference checks and write in one transaction.
+                    asset=unit.branding_asset(url.rsplit('/',1)[1])
+                    if not asset or asset['purpose']!=purpose:raise ConfigurationConflict('Asset de branding no disponible')
+            check_revision(previous, expected)
             if unit.list('avatars') and model.active_avatar_id is None:
                 raise ConfigurationConflict('Debe seleccionarse un avatar activo')
             for avatar in unit.list('avatars'):
@@ -104,13 +117,47 @@ class CommercialService:
             if model.active_avatar_id and not unit.get('avatars', model.active_avatar_id):
                 raise ConfigurationConflict('Avatar seleccionado inexistente')
             unit.save_settings(model.model_dump(mode='json'), actor)
-            return unit.settings()
+            result = unit.settings()
+            unit.audit(actor, 'settings.save', 'settings', 'general', previous, result, request_id)
+            return result
 
-    def activate_avatar(self, identifier, actor='admin-token'):
+    def activate_avatar(self, identifier, actor='admin-token', *, request_id='internal', expected=None):
         with self.repository.transaction(write=True) as unit:
             avatar = unit.get('avatars', identifier)
             if not avatar or not avatar['enabled']:
                 raise ConfigurationConflict('Avatar inexistente o deshabilitado')
+            previous_selection = unit.settings()
+            check_revision(previous_selection, expected)
             result = unit.save('avatars', identifier, {**payload(avatar), 'active': True}, actor)
             unit.save_settings({'active_avatar_id': identifier}, actor)
+            unit.audit(actor, 'avatars.activate', 'avatars', identifier, avatar, result, request_id)
+            unit.audit(actor, 'settings.avatar', 'settings', 'general', previous_selection, unit.settings(), request_id)
             return result
+
+    def save_campaign_offer(self, campaign, price, actor, request_id, *, create, expected_campaign=None, expected_price=None):
+        """One transaction for campaign and selected offer; preserve other offers."""
+        if not create and expected_campaign is None:
+            from domain.errors import DomainError
+            raise DomainError('admin_record_changed',409)
+        campaign = CampaignRecord.model_validate(campaign)
+        price = PriceRecord.model_validate(price)
+        if price.campaign_id != campaign.id:
+            raise ConfigurationConflict('Campaña inexistente')
+        with self.repository.transaction(write=True) as unit:
+            old_campaign = unit.get('campaigns', campaign.id)
+            old_price = unit.get('prices', price.id)
+            if not create and old_price and expected_price is None:
+                from domain.errors import DomainError
+                raise DomainError('admin_record_changed',409)
+            check_revision(old_campaign, expected_campaign)
+            check_revision(old_price, expected_price)
+            if create and (old_campaign or old_price):
+                raise ConfigurationConflict('El identificador ya existe')
+            if not create and (not old_campaign or (old_price and old_price['campaign_id'] != campaign.id)):
+                raise ConfigurationConflict('Campaña inexistente')
+            new_campaign = unit.save('campaigns', campaign.id, campaign.model_dump(mode='json'), actor)
+            new_price = unit.save('prices', price.id, price.model_dump(mode='json'), actor)
+            validate_configuration(unit)
+            unit.audit(actor, 'campaigns.save', 'campaigns', campaign.id, old_campaign, new_campaign, request_id)
+            unit.audit(actor, 'prices.save', 'prices', price.id, old_price, new_price, request_id)
+            return {'campaign':new_campaign,'price':new_price}

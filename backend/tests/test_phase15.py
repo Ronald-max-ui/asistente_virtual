@@ -55,7 +55,7 @@ class StructuredActionsTests(unittest.TestCase):
 
     def test_catalog_is_only_consulted_after_consent(self):
         request = {"type": "show_payment", "program": "gastronomia", "concept": "inscripcion"}
-        with patch("services.action_service.consultar_tarifa") as catalog:
+        with patch("services.action_service.pricing_service.resolve") as catalog:
             self.assertEqual(procesar_acciones([request], self.context("No quiero pagar")).actions, [])
             catalog.assert_not_called()
 

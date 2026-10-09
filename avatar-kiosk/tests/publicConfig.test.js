@@ -18,7 +18,7 @@ test('avatar seleccionado por backend respeta la base configurada y puede cambia
   avatar = 'second';
   assert.equal(await fetchAvatarUrl(fetcher, resolve), 'https://example.com/lia/static/avatars/second.vrm');
   assert.equal(calls[0].url, 'https://example.com/lia/api/config');
-  assert.equal(calls[0].options.cache, 'no-store');
+  assert.equal(calls[0].options.cache, 'no-cache');
 });
 
 test('configuración inválida y rutas peligrosas no llegan al cargador VRM', () => {
@@ -63,7 +63,7 @@ test('cargador controla el fallo de configuración sin bloquear la aplicación',
   const source = fs.readFileSync(new URL('../src/avatar/loader.js', import.meta.url), 'utf8')
     .replace(/^import .*;\r?\n/gm, '').replace(/export /g, '');
   vm.runInContext(source, context);
-  await context.loadAvatar({ add: () => assert.fail('No debe añadir un avatar inválido') });
+  assert.equal(await context.loadAvatar({ add: () => assert.fail('No debe añadir un avatar inválido') }),false);
   assert.equal(context.getCurrentVrm(), null);
-  assert.equal(badge.textContent, 'Avatar no disponible');
+  assert.equal(badge.textContent, ''); // Optional avatar must not overwrite conversation state.
 });

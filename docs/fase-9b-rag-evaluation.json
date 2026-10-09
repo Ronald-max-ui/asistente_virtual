@@ -1,0 +1,284 @@
+{
+  "passed": true,
+  "cases": [
+    {
+      "query": "¿Qué se aprende en Administración?",
+      "expected_source": "administracion",
+      "expected_category": "02_carreras",
+      "expected_program": "administracion",
+      "sources": [
+        "administracion"
+      ],
+      "distances": [
+        0.3726,
+        0.3966,
+        0.4463,
+        0.4684,
+        0.4751,
+        0.5591
+      ],
+      "passed": true,
+      "checks": {
+        "expected_metadata": true,
+        "source_isolation": true,
+        "missing_terms": [],
+        "forbidden_terms": [],
+        "monetary_amount": false
+      }
+    },
+    {
+      "query": "¿Gastronomía es virtual?",
+      "expected_source": "gastronomia",
+      "expected_category": "02_carreras",
+      "expected_program": "gastronomia",
+      "sources": [
+        "gastronomia"
+      ],
+      "distances": [
+        0.6181
+      ],
+      "passed": true,
+      "checks": {
+        "expected_metadata": true,
+        "source_isolation": true,
+        "missing_terms": [],
+        "forbidden_terms": [],
+        "monetary_amount": false
+      }
+    },
+    {
+      "query": "¿Qué idiomas enseña Turismo?",
+      "expected_source": "turismo",
+      "expected_category": "02_carreras",
+      "expected_program": "turismo",
+      "sources": [
+        "turismo"
+      ],
+      "distances": [
+        0.4087,
+        0.4496,
+        0.519,
+        0.5249,
+        0.5431,
+        0.5766
+      ],
+      "passed": true,
+      "checks": {
+        "expected_metadata": true,
+        "source_isolation": true,
+        "missing_terms": [],
+        "forbidden_terms": [],
+        "monetary_amount": false
+      }
+    },
+    {
+      "query": "¿Necesito experiencia para Bartender?",
+      "expected_source": "bartender",
+      "expected_category": "03_cursos_cortos",
+      "expected_program": "bartender",
+      "sources": [
+        "bartender"
+      ],
+      "distances": [
+        0.2682,
+        0.2859,
+        0.3085,
+        0.3106,
+        0.348,
+        0.3953
+      ],
+      "passed": true,
+      "checks": {
+        "expected_metadata": true,
+        "source_isolation": true,
+        "missing_terms": [],
+        "forbidden_terms": [],
+        "monetary_amount": false
+      }
+    },
+    {
+      "query": "¿Qué aprenderé en Panadería?",
+      "expected_source": "panaderia_pasteleria",
+      "expected_category": "03_cursos_cortos",
+      "expected_program": "panaderia_pasteleria",
+      "sources": [
+        "panaderia_pasteleria"
+      ],
+      "distances": [
+        0.3729,
+        0.3973,
+        0.4001,
+        0.4126,
+        0.4451,
+        0.4561
+      ],
+      "passed": true,
+      "checks": {
+        "expected_metadata": true,
+        "source_isolation": true,
+        "missing_terms": [],
+        "forbidden_terms": [],
+        "monetary_amount": false
+      }
+    },
+    {
+      "query": "¿Dónde queda el instituto?",
+      "expected_source": "institucional_general",
+      "expected_category": "01_institucional",
+      "expected_program": null,
+      "sources": [
+        "institucional_general"
+      ],
+      "distances": [
+        0.4019,
+        0.5205,
+        0.5264,
+        0.5619,
+        0.5773,
+        0.582
+      ],
+      "passed": true,
+      "checks": {
+        "expected_metadata": true,
+        "source_isolation": true,
+        "missing_terms": [],
+        "forbidden_terms": [],
+        "monetary_amount": false
+      }
+    },
+    {
+      "query": "¿Qué documentos necesito para matricularme?",
+      "expected_source": "admision_y_pagos",
+      "expected_category": "01_institucional",
+      "expected_program": null,
+      "sources": [
+        "admision_y_pagos"
+      ],
+      "distances": [
+        0.3957,
+        0.4446,
+        0.581,
+        0.6125,
+        0.6451
+      ],
+      "passed": true,
+      "checks": {
+        "expected_metadata": true,
+        "source_isolation": true,
+        "missing_terms": [],
+        "forbidden_terms": [],
+        "monetary_amount": false
+      }
+    },
+    {
+      "query": "¿Qué documentos necesito para Gastronomía?",
+      "expected_source": "admision_y_pagos",
+      "expected_category": "01_institucional",
+      "expected_program": null,
+      "sources": [
+        "admision_y_pagos",
+        "gastronomia"
+      ],
+      "distances": [
+        0.3358,
+        0.364,
+        0.4582,
+        0.4762,
+        0.5647
+      ],
+      "passed": true,
+      "checks": {
+        "expected_metadata": true,
+        "source_isolation": true,
+        "missing_terms": [],
+        "forbidden_terms": [],
+        "monetary_amount": false
+      }
+    },
+    {
+      "query": "¿Administración enseña japonés?",
+      "expected_source": "administracion",
+      "expected_category": "02_carreras",
+      "expected_program": "administracion",
+      "sources": [
+        "administracion"
+      ],
+      "distances": [
+        0.6127,
+        0.6486
+      ],
+      "passed": true,
+      "checks": {
+        "expected_metadata": true,
+        "source_isolation": true,
+        "missing_terms": [],
+        "forbidden_terms": [],
+        "monetary_amount": false
+      }
+    },
+    {
+      "query": "¿Contabilidad tiene clases los sábados como Bartender?",
+      "expected_source": "contabilidad",
+      "expected_category": "02_carreras",
+      "expected_program": "contabilidad",
+      "sources": [],
+      "distances": [],
+      "passed": true,
+      "checks": {
+        "expected_metadata": false,
+        "source_isolation": true,
+        "missing_terms": [],
+        "forbidden_terms": [],
+        "monetary_amount": false
+      }
+    },
+    {
+      "query": "¿Bartender puede tener actividades los sábados?",
+      "expected_source": "bartender",
+      "expected_category": "03_cursos_cortos",
+      "expected_program": "bartender",
+      "sources": [
+        "bartender"
+      ],
+      "distances": [
+        0.4615,
+        0.4635,
+        0.5022,
+        0.5216,
+        0.5302,
+        0.583
+      ],
+      "passed": true,
+      "checks": {
+        "expected_metadata": true,
+        "source_isolation": true,
+        "missing_terms": [],
+        "forbidden_terms": [],
+        "monetary_amount": false
+      }
+    },
+    {
+      "query": "¿Cuál es el precio de matrícula?",
+      "expected_source": "admision_y_pagos",
+      "expected_category": "01_institucional",
+      "expected_program": null,
+      "sources": [
+        "admision_y_pagos"
+      ],
+      "distances": [
+        0.2823,
+        0.5201,
+        0.5799,
+        0.6213
+      ],
+      "passed": true,
+      "checks": {
+        "expected_metadata": true,
+        "source_isolation": true,
+        "missing_terms": [],
+        "forbidden_terms": [],
+        "monetary_amount": false
+      }
+    }
+  ]
+}

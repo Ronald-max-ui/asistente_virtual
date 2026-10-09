@@ -193,7 +193,7 @@ class CommercialTests(unittest.TestCase):
         self.assertEqual(sum(a['active'] for a in self.service.list('avatars')), 1)
         self.assertEqual(self.service.settings()['active_avatar_id'], 'second')
         self.service.save_settings({**self.service.settings(), 'assistant_name': 'Lía',
-            'active_avatar_id': 'lia_original', 'voice': {'internal': 'secret'}, 'extensions': {'note': 'private'}})
+            'active_avatar_id': 'lia_original', 'voice': {'voice_id': 'es-PE-CamilaNeural'}, 'extensions': {'note': 'private'}})
         config = AvatarService(self.repository).public_config()
         self.assertEqual(config['avatar']['id'], 'lia_original')
         self.assertNotIn('secret', json.dumps(config))
@@ -238,7 +238,7 @@ class CommercialTests(unittest.TestCase):
             self.assertEqual(client.get('/api/admin/campaigns', headers=headers).status_code, 200)
 
     def test_db_updates_apply_to_chat_and_stream_with_identical_policy(self):
-        server = load_server()
+        server = load_server(pricing=self.pricing)
         server.app.state.commercial_service = self.service
         request = dict(type='show_payment', program='gastronomia', concept='inscripcion')
         reply = AssistantReply(assistant_text='La inscripción cuesta S/ 999.', structured_actions=[request], native_actions_present=True)

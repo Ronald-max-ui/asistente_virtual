@@ -4,62 +4,52 @@ tipo: "carrera_tecnica"
 categoria: "02_carreras"
 titulo: "Administración de Empresas"
 tags: ["administracion", "empresas", "gestion", "rrhh", "marketing", "logistica", "ssoma", "costos", "horarios", "presencial", "virtual"]
-inicio_clases: "2026-10-05"
-duracion: "2 años y medio"
-ciclos: 6
-modalidad: ["presencial", "virtual"]
 ---
 
-# Carrera Profesional Técnica: Administración de Empresas
+# Administración de Empresas
 
-## Ficha Técnica
+## Descripción
 
-- **Título otorgado:** Título Profesional Técnico en Administración de Empresas a Nombre de la Nación
-- **Duración:** 2 años y medio (6 ciclos académicos de 17 semanas / 4 meses y medio cada uno)
-- **Inicio de clases:** 5 de octubre de 2026
-- **Perfil:** Forma profesionales capaces de planificar, organizar, dirigir y controlar los recursos de una organización para el crecimiento de empresas públicas, privadas o negocios propios.
+La carrera forma profesionales capaces de planificar, organizar, dirigir y controlar los recursos de empresas públicas, privadas o negocios propios.
 
-## Modalidades y Horarios
+## Duración
 
-### Modalidad Presencial
+La duración declarada es de 2 años y medio, organizada en 6 ciclos académicos. El calendario de cada periodo se confirma con admisión.
 
-| Turno | Días | Horario |
-|---|---|---|
-| Mañana | Lunes a viernes | 7:00 a.m. a 11:30 a.m. |
+## Modalidades
 
-**Lugar:** Sede Principal de San Sebastián (Calle Bellavista N.º 130 y 140, Cusco).
+- **Presencial:** formación en la sede académica del instituto.
+- **Virtual:** clases en vivo y gestión académica mediante las plataformas descritas en la [información institucional](../01_institucional/general.md).
 
-### Modalidad Virtual
+Los turnos, horarios y fechas de inicio se confirman para este programa y periodo. No se atribuyen horarios de otras carreras.
 
-| Turno | Días | Horario |
-|---|---|---|
-| Noche | Lunes a viernes | 6:30 p.m. a 9:30 p.m. |
+## Qué aprenderás
 
-Clases en vivo por Google Meet (grabadas para repaso). Gestión académica por plataforma Q10.
+- Planificación, organización, dirección y control de recursos empresariales.
+- Análisis de casos reales del entorno empresarial peruano.
+- Simulaciones de negocios y desarrollo de proyectos empresariales propios.
 
-## Información comercial vigente
+La formación cuenta con docentes especializados en gestión empresarial y aulas para simulaciones de negocios.
 
-La única fuente de tarifas, campañas y promociones de este programa es [administracion.pricing.json](administracion.pricing.json).
-Lía consulta PricingService directamente; los importes no dependen del índice vectorial.
-No copies precios a este Markdown. Un estado `pending` no significa gratuito.
+## Campo laboral
 
+El egresado puede desempeñarse en empresas privadas, instituciones públicas, entidades financieras y comerciales, en áreas como:
 
-## Metodología y Herramientas
+- Administración general y operaciones.
+- Recursos humanos y gestión de talento.
+- Finanzas, tesorería y costos.
+- Marketing y ventas.
+- Logística y compras.
+- Procesos productivos y control de calidad.
+- Seguridad, Salud Ocupacional y Medio Ambiente (SSOMA).
+- Creación, dirección y gestión de emprendimientos propios.
 
-- Docentes especializados en gestión empresarial
-- Aulas especializadas para simulaciones de negocios
-- Análisis de casos reales del entorno empresarial peruano
-- Desarrollo de proyectos empresariales propios
+## Requisitos
 
-## Campo Laboral
+Los requisitos documentales generales se encuentran en [admisión y requisitos](../01_institucional/admision_y_pagos.md).
 
-El egresado puede desempeñarse en empresas privadas, instituciones públicas, entidades financieras y comerciales en áreas como:
+## Información adicional
 
-- Administración general y operaciones
-- Recursos Humanos (gestión de talento y personal)
-- Finanzas, tesorería y costos
-- Marketing y ventas
-- Logística y compras
-- Procesos productivos y control de calidad
-- Seguridad, Salud Ocupacional y Medio Ambiente (SSOMA)
-- Creación, dirección y gestión de emprendimientos propios
+El título otorgado es el Título Profesional Técnico en Administración de Empresas a Nombre de la Nación, sujeto al cumplimiento de los requisitos académicos y administrativos.
+
+La ubicación, contacto y beneficios comunes se encuentran en la [información institucional](../01_institucional/general.md). Las condiciones comerciales vigentes se consultan según lo indicado en [pagos](../01_institucional/admision_y_pagos.md).
